@@ -1,4 +1,4 @@
-# src/model.py
+# src/bert_model.py
 
 import torch.nn as nn
 from unsloth import FastLanguageModel

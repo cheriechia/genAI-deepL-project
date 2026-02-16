@@ -1,0 +1,18 @@
+method: grid
+
+metric:
+  name: best_macro_f1
+  goal: maximize
+
+parameters:
+  dropout:
+    values: [0.3, 0.5]
+
+  freeze_resnet:
+    values: [true, false]
+
+  lr_backbone:
+  values: [None, 1e-3]
+
+  lr_head:
+    value: [1e-3, 1e-3]

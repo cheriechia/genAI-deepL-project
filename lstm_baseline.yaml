@@ -1,0 +1,6 @@
+max_len: 64
+dropout: 0.5
+learning_rate: 1e-3
+embed_dim: 50
+hidden_dim: 64
+epochs: 1

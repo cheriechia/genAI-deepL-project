@@ -1,0 +1,6 @@
+hidden_dim1: 64
+hidden_dim2: 32
+dropout: 0.3
+learning_rate: 1e-3
+batch_size: 32
+epochs: 1

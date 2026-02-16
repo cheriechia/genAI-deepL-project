@@ -1,4 +1,4 @@
-# bert.py
+# mlp.py
 
 import wandb
 import torch
@@ -7,10 +7,12 @@ import yaml
 
 from src.config import DEVICE, SEED, PATIENCE
 from src.utils import set_seed, compute_weights
-from src.bert_dataset import create_dataloaders
-from src.bert_model import load_bert, CaptionBERT
+from src.mlp_dataset import create_dataloaders
+from src.mlp_model import MetadataMLP
 from src.train import train_model
 
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 def _run(config):
     """
@@ -25,55 +27,60 @@ def _run(config):
                            parse_dates=["publish_timestamp"])
     test_df = pd.read_csv("data/test_df.csv",
                           parse_dates=["publish_timestamp"])
-    # Fill missing captions with ""
-    train_df["caption"] = train_df["caption"].fillna("")
-    test_df["caption"] = test_df["caption"].fillna("")
+    
+    # Define columns to be used in metadata model
+    numeric_cols = [
+        "following",
+        "follower_following_ratio",
+        "is_weekend",
+        "has_location",
+        "is_carousel",
+        "num_images",
+        "is_sponsored",
+        "caption_word_count",
+        "num_hashtags"
+    ]
+    categorical_cols = ["day", "hour"]
+    # select input features from dataframe
+    X_train = train_df[numeric_cols + categorical_cols]
+    X_test  = test_df[numeric_cols + categorical_cols]
+    # Preprocessor
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ("num", StandardScaler(), numeric_cols),
+            ("cat", OneHotEncoder(handle_unknown="ignore", sparse_output=False), categorical_cols)
+        ]
+    )
+    # apply preprocessing
+    X_train_proc = preprocessor.fit_transform(X_train)
+    X_test_proc  = preprocessor.transform(X_test)
+    
     # Set labels
     y_train = train_df["engagement_label"].values
     y_test = test_df["engagement_label"].values
-
-    # Load BERT model and tokenizer
-    bert_model, tokenizer = load_bert(config.max_len)
-
-    # Tokenize train and test sets separately
-    train_encodings = tokenizer(
-        train_df["caption"].tolist(),
-        padding="max_length",
-        truncation=True,
-        max_length=config.max_len,
-        return_tensors="pt"
-    )
-
-    test_encodings = tokenizer(
-        test_df["caption"].tolist(),
-        padding="max_length",
-        truncation=True,
-        max_length=config.max_len,
-        return_tensors="pt"
-    )
 
     # set seed for dataloader shuffling order to make it deterministic
     g = torch.Generator().manual_seed(SEED)
 
     # DataLoader and dataset
     train_loader, test_loader = create_dataloaders(
-        train_encodings,
-        test_encodings,
+        X_train_proc,
+        X_test_proc,
         y_train,
         y_test,
         config.batch_size,
         g
     )
+    
+    # Input size matching one-hot expanded features
+    input_dim = X_train_proc.shape[1]
 
-    model = CaptionBERT(
-        bert_model,
-        hidden_dim=config.hidden_dim,
+    model = MetadataMLP(
+        input_dim=input_dim,
+        hidden_dim1=config.hidden_dim1, 
+        hidden_dim2=config.hidden_dim2,
         dropout=config.dropout
     ).to(DEVICE)
-
-    if config.freeze_bert:
-        for p in model.bert.parameters():
-            p.requires_grad = False
 
     # Weights for class imbalance
     class_weights = compute_weights(y_train, DEVICE)
@@ -81,7 +88,7 @@ def _run(config):
     # Loss & optimizer
     criterion = torch.nn.CrossEntropyLoss(weight=class_weights)
     optimizer = torch.optim.AdamW(
-        filter(lambda p: p.requires_grad, model.parameters()),
+        model.parameters(),
         lr=config.learning_rate
     )
 

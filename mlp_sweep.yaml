@@ -1,0 +1,22 @@
+method: grid
+
+metric:
+  name: best_macro_f1
+  goal: maximize
+
+parameters:
+  hidden_dim1:
+    values: [32, 64, 128]
+
+  hidden_dim2:
+    values: [16, 32, 64]
+
+  learning_rate:
+    values: [1e-3, 5e-4]
+
+  dropout:
+    values: [0.3, 0.5]
+
+  batch_size:
+    value: 32
+

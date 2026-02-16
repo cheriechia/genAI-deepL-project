@@ -4,13 +4,33 @@ import wandb
 import torch
 import pandas as pd
 import yaml
+import re
 
+from collections import Counter
 from src.config import DEVICE, SEED, PATIENCE
 from src.utils import set_seed, compute_weights
-from src.bert_dataset import create_dataloaders
-from src.bert_model import load_bert, CaptionBERT
+from src.lstm_dataset import create_dataloaders
+from src.lstm_model import CaptionRNN
 from src.train import train_model
 
+# Simple tokenizer: split on spaces, remove non-alphanumeric chars
+def tokenize(text):
+    if not isinstance(text, str):
+        return []
+    # lowercase and keep only words (a-z, 0-9)
+    text = text.lower()
+    tokens = re.findall(r'\b\w+\b', text)
+    return tokens
+
+def encode_caption(caption, vocab, max_len):
+    tokens = tokenize(caption)
+    seq = [vocab.get(tok, vocab["<UNK>"]) for tok in tokens]
+    # pad or truncate
+    if len(seq) < max_len:
+        seq += [vocab["<PAD>"]] * (max_len - len(seq))
+    else:
+        seq = seq[:max_len]
+    return seq
 
 def _run(config):
     """
@@ -28,52 +48,53 @@ def _run(config):
     # Fill missing captions with ""
     train_df["caption"] = train_df["caption"].fillna("")
     test_df["caption"] = test_df["caption"].fillna("")
-    # Set labels
+
+    # Build vocab
+    all_tokens = []
+    for caption in train_df['caption']:
+        all_tokens.extend(tokenize(caption))
+
+    # Count frequencies and build vocab
+    counter = Counter(all_tokens)
+    vocab = {"<PAD>": 0, "<UNK>": 1}  # reserve 0 for padding, 1 for unknown
+    for i, word in enumerate(counter.keys(), start=2):
+        vocab[word] = i
+    vocab_size = len(vocab)
+
+    # Apply encoding to train and test
+    train_df["caption_seq"] = train_df["caption"].apply(
+        lambda x: encode_caption(x, vocab, config.max_len)
+    )
+
+    test_df["caption_seq"] = test_df["caption"].apply(
+        lambda x: encode_caption(x, vocab, config.max_len)
+    )
+
+    X_train = train_df["caption_seq"].tolist()
     y_train = train_df["engagement_label"].values
+
+    X_test = test_df["caption_seq"].tolist()
     y_test = test_df["engagement_label"].values
-
-    # Load BERT model and tokenizer
-    bert_model, tokenizer = load_bert(config.max_len)
-
-    # Tokenize train and test sets separately
-    train_encodings = tokenizer(
-        train_df["caption"].tolist(),
-        padding="max_length",
-        truncation=True,
-        max_length=config.max_len,
-        return_tensors="pt"
-    )
-
-    test_encodings = tokenizer(
-        test_df["caption"].tolist(),
-        padding="max_length",
-        truncation=True,
-        max_length=config.max_len,
-        return_tensors="pt"
-    )
 
     # set seed for dataloader shuffling order to make it deterministic
     g = torch.Generator().manual_seed(SEED)
 
     # DataLoader and dataset
     train_loader, test_loader = create_dataloaders(
-        train_encodings,
-        test_encodings,
+        X_train,
+        X_test,
         y_train,
         y_test,
         config.batch_size,
         g
     )
 
-    model = CaptionBERT(
-        bert_model,
+    model = CaptionRNN(
+        vocab_size=vocab_size,
+        embed_dim=config.embed_dim,
         hidden_dim=config.hidden_dim,
         dropout=config.dropout
     ).to(DEVICE)
-
-    if config.freeze_bert:
-        for p in model.bert.parameters():
-            p.requires_grad = False
 
     # Weights for class imbalance
     class_weights = compute_weights(y_train, DEVICE)
@@ -81,7 +102,7 @@ def _run(config):
     # Loss & optimizer
     criterion = torch.nn.CrossEntropyLoss(weight=class_weights)
     optimizer = torch.optim.AdamW(
-        filter(lambda p: p.requires_grad, model.parameters()),
+        model.parameters(),
         lr=config.learning_rate
     )
 
