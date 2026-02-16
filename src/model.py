@@ -1,0 +1,39 @@
+# src/model.py
+
+import torch.nn as nn
+from unsloth import FastLanguageModel
+
+
+def load_bert(max_seq_length=128):
+    bert_model, tokenizer = FastLanguageModel.from_pretrained(
+        model_name="unsloth/bert-base-uncased",
+        max_seq_length=max_seq_length,
+        load_in_4bit=True,
+    )
+    return bert_model, tokenizer
+
+
+class CaptionBERT(nn.Module):
+    def __init__(self, bert_model,
+                 hidden_dim=256,
+                 num_classes=3,
+                 dropout=0.5):
+        super().__init__()
+        self.bert = bert_model
+        self.dropout = nn.Dropout(dropout)
+        self.fc_hidden = nn.Linear(self.bert.config.hidden_size, hidden_dim) # self.bert.config.hidden_size is 768 for bert-base
+        self.relu = nn.ReLU()
+        self.fc_out = nn.Linear(hidden_dim, num_classes)
+
+    def forward(self, input_ids, attention_mask):
+        outputs = self.bert(
+            input_ids=input_ids,
+            attention_mask=attention_mask
+        )
+        cls_emb = outputs.last_hidden_state[:, 0, :]
+        x = self.dropout(cls_emb)
+        x = self.fc_hidden(x)
+        x = self.relu(x)
+        x = self.dropout(x)
+        out = self.fc_out(x) # raw logits
+        return out

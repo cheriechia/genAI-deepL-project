@@ -1,0 +1,24 @@
+method: grid
+
+metric:
+  name: best_macro_f1
+  goal: maximize
+
+parameters:
+  max_len:
+    values: [64, 128]
+
+  dropout:
+    values: [0.3, 0.5]
+
+  learning_rate:
+    values: [2e-5, 5e-5, 1e-3]
+
+  freeze_bert:
+    values: [true, false]
+
+  batch_size:
+    value: 32
+
+  hidden_dim:
+    value: 256

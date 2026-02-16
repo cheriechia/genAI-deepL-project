@@ -1,0 +1,7 @@
+max_len: 64
+dropout: 0.5
+learning_rate: 2e-5
+freeze_bert: true
+batch_size: 32
+hidden_dim: 256
+epochs: 1
