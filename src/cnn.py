@@ -15,6 +15,26 @@ from src.train import train_model
 from torchvision import transforms
 import torchvision.models as models
 
+def extract_first_image_path(x):
+    if isinstance(x, list):
+        # already a list, take first element
+        return x[0] if x else None
+    elif isinstance(x, str):
+        x = x.strip()
+        if x.startswith("[") and x.endswith("]"):
+            # string representation of list → parse safely
+            try:
+                lst = ast.literal_eval(x)
+                return lst[0] if lst else None
+            except Exception:
+                return None
+        else:
+            # plain string path → just return as is
+            return x
+    else:
+        return None
+
+
 def _run(config):
     """
     Core training function that both sweep and baseline call.
@@ -32,24 +52,50 @@ def _run(config):
     y_train = train_df["engagement_label"].values
     y_test = test_df["engagement_label"].values
 
-    # Convert image paths string to list
-    train_df["image_path"] = train_df["image_path"].apply(
-        lambda x: ast.literal_eval(x) if isinstance(x, str) else x
-    )
-    test_df["image_path"] = test_df["image_path"].apply(
-        lambda x: ast.literal_eval(x) if isinstance(x, str) else x
-    )
-    # Keep only the first image (if list exists and is not empty)
-    train_df["image_path"] = train_df["image_path"].apply(
-        lambda x: x[0] if isinstance(x, list) and len(x) > 0 else None
-    )
+    # Load parameters from config
+    try:
+        model_name = str(config.model_name)
+        dropout = float(config.dropout)
+        batch_size = int(config.batch_size)
+        learning_rate = float(config.learning_rate)
+        epochs = int(config.epochs)
+        freeze_resnet = (
+            config.freeze_resnet if isinstance(config.freeze_resnet, bool)
+            else str(config.freeze_resnet).lower() == "true"
+        )
+        lr_backbone = config.lr_backbone
+        if lr_backbone is not None:
+            lr_backbone = float(lr_backbone)
+        lr_head = float(config.lr_head)
+    except AttributeError as e:
+        raise ValueError(f"Missing required config parameter: {e}")
 
-    test_df["image_path"] = test_df["image_path"].apply(
-        lambda x: x[0] if isinstance(x, list) and len(x) > 0 else None
-    )
+    except ValueError as e:
+        raise ValueError(f"Incorrect config value type: {e}")
+
+    # Keep only the first image
+    train_df["image_path"] = train_df["image_path"].apply(extract_first_image_path)
+    test_df["image_path"] = test_df["image_path"].apply(extract_first_image_path)
+    
     # Drop rows with no images (if any)
     train_df = train_df.dropna(subset=["image_path"]).reset_index(drop=True)
     test_df = test_df.dropna(subset=["image_path"]).reset_index(drop=True)
+
+    # # Convert image paths string to list
+    # train_df["image_path"] = train_df["image_path"].apply(
+    #     lambda x: ast.literal_eval(x) if isinstance(x, str) else x
+    # )
+    # test_df["image_path"] = test_df["image_path"].apply(
+    #     lambda x: ast.literal_eval(x) if isinstance(x, str) else x
+    # )
+    # # Keep only the first image (if list exists and is not empty)
+    # train_df["image_path"] = train_df["image_path"].apply(
+    #     lambda x: x[0] if isinstance(x, list) and len(x) > 0 else None
+    # )
+
+    # test_df["image_path"] = test_df["image_path"].apply(
+    #     lambda x: x[0] if isinstance(x, list) and len(x) > 0 else None
+    # )
 
     # # Explode multiple images in image_path, to each be mapped to the engagement label
     # train_df = train_df.explode("image_path").reset_index(drop=True)
@@ -86,7 +132,7 @@ def _run(config):
         test_df,
         train_transform,
         test_transform,
-        config.batch_size,
+        batch_size,
         g
     )
 
@@ -94,10 +140,10 @@ def _run(config):
     resnet = models.resnet18(weights="IMAGENET1K_V1")
     model = ImageResNet(
         resnet,
-        dropout=config.dropout
+        dropout=dropout
     ).to(DEVICE)
 
-    if config.freeze_resnet:
+    if freeze_resnet:
         # Freeze backbone
         for name, param in model.resnet.named_parameters():
             if "fc" not in name:   # do not freeze fc
@@ -110,7 +156,7 @@ def _run(config):
         # Optimizer
         optimizer = torch.optim.Adam(
             model.resnet.fc.parameters(),  # only train classifier head
-            lr=config.lr_head
+            lr=lr_head
         )
 
     else:
@@ -123,8 +169,8 @@ def _run(config):
 
         # Set optimizer from partially unfrozen ResNet
         optimizer = torch.optim.Adam([
-            {"params": model.resnet.layer4.parameters(), "lr": config.lr_backbone},
-            {"params": model.resnet.fc.parameters(), "lr": config.lr_head},
+            {"params": model.resnet.layer4.parameters(), "lr": lr_backbone},
+            {"params": model.resnet.fc.parameters(), "lr": lr_head},
         ])
 
     # Weights for class imbalance
@@ -140,15 +186,20 @@ def _run(config):
         optimizer,
         criterion,
         DEVICE,
-        epochs=config.epochs,
+        epochs=epochs,
         patience=PATIENCE
     )
 
     # Log best F1
-    wandb.log({"best_macro_f1": best_f1})
+    wandb.log({
+        "model": model_name,
+        "best_macro_f1": best_f1
+    })
 
     # Save best model
-    torch.save(model.state_dict(), "best_model.pt")
+    save_path = f"best_model_{model_name}.pt"
+    torch.save(model.state_dict(), save_path)
+    print(f"Saved best model to {save_path}")
 
 
 # ----------------------------

@@ -1,0 +1,121 @@
+[34m[1mwandb[0m: Detected [huggingface_hub.inference] in use.
+[34m[1mwandb[0m: Use W&B Weave for improved LLM call tracing. Install Weave with `pip install weave` then add `import weave` to the top of your script.
+[34m[1mwandb[0m: For more information, check out the docs at: https://weave-docs.wandb.ai/
+0
+
+Epoch 1
+Train | loss=1.0835, acc=0.409, macro f1=0.378
+Train Confusion Matrix:
+[[ 65 305  92]
+ [ 42 315 139]
+ [ 19 273 221]]
+Test  | loss=1.0602, acc=0.473, macro f1=0.464
+Test Confusion Matrix:
+[[42 52 53]
+ [13 54 47]
+ [11 22 82]]
+1
+
+Epoch 2
+Train | loss=1.0417, acc=0.506, macro f1=0.494
+Train Confusion Matrix:
+[[218 102 142]
+ [125 166 205]
+ [ 71  81 361]]
+Test  | loss=0.9960, acc=0.524, macro f1=0.485
+Test Confusion Matrix:
+[[87 20 40]
+ [39 21 54]
+ [16 10 89]]
+2
+
+Epoch 3
+Train | loss=0.9920, acc=0.536, macro f1=0.513
+Train Confusion Matrix:
+[[301  64  97]
+ [168 123 205]
+ [ 98  50 365]]
+Test  | loss=0.9526, acc=0.548, macro f1=0.527
+Test Confusion Matrix:
+[[85 30 32]
+ [31 34 49]
+ [15 13 87]]
+3
+
+Epoch 4
+Train | loss=0.9565, acc=0.556, macro f1=0.543
+Train Confusion Matrix:
+[[302  78  82]
+ [154 162 180]
+ [ 94  65 354]]
+Test  | loss=0.9190, acc=0.601, macro f1=0.584
+Test Confusion Matrix:
+[[100  30  17]
+ [ 35  42  37]
+ [ 17  14  84]]
+4
+
+Epoch 5
+Train | loss=0.9339, acc=0.573, macro f1=0.560
+Train Confusion Matrix:
+[[330  69  63]
+ [173 167 156]
+ [ 93  74 346]]
+Test  | loss=0.9027, acc=0.596, macro f1=0.570
+Test Confusion Matrix:
+[[104  24  19]
+ [ 39  35  40]
+ [ 20  10  85]]
+5
+
+Epoch 6
+Train | loss=0.9162, acc=0.576, macro f1=0.561
+Train Confusion Matrix:
+[[345  61  56]
+ [179 161 156]
+ [106  65 342]]
+Test  | loss=0.8990, acc=0.585, macro f1=0.568
+Test Confusion Matrix:
+[[100  30  17]
+ [ 40  40  34]
+ [ 21  14  80]]
+6
+
+Epoch 7
+Train | loss=0.8958, acc=0.598, macro f1=0.584
+Train Confusion Matrix:
+[[348  59  55]
+ [175 174 147]
+ [ 96  59 358]]
+Test  | loss=0.8919, acc=0.601, macro f1=0.578
+Test Confusion Matrix:
+[[109  26  12]
+ [ 45  37  32]
+ [ 22  13  80]]
+7
+
+Epoch 8
+Train | loss=0.8873, acc=0.593, macro f1=0.584
+Train Confusion Matrix:
+[[347  68  47]
+ [171 189 136]
+ [103  73 337]]
+Test  | loss=0.8909, acc=0.593, macro f1=0.578
+Test Confusion Matrix:
+[[102  34  11]
+ [ 41  42  31]
+ [ 20  16  79]]
+8
+
+Epoch 9
+Train | loss=0.8834, acc=0.592, macro f1=0.585
+Train Confusion Matrix:
+[[337  77  48]
+ [160 201 135]
+ [103  77 333]]
+Test  | loss=0.8809, acc=0.582, macro f1=0.555
+Test Confusion Matrix:
+[[111  26  10]
+ [ 53  32  29]
+ [ 23  16  76]]
+Early stopping triggered

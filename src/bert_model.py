@@ -2,14 +2,19 @@
 
 import torch.nn as nn
 from unsloth import FastLanguageModel
+from transformers import BertTokenizer
+from transformers import BertModel
+
 
 
 def load_bert(max_seq_length=128):
-    bert_model, tokenizer = FastLanguageModel.from_pretrained(
-        model_name="unsloth/bert-base-uncased",
-        max_seq_length=max_seq_length,
-        load_in_4bit=True,
-    )
+    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
+    bert_model = BertModel.from_pretrained("bert-base-uncased")
+    # bert_model, tokenizer = FastLanguageModel.from_pretrained(
+    #     model_name="unsloth/bert-base-uncased",
+    #     max_seq_length=max_seq_length,
+    #     load_in_4bit=True,
+    # )
     return bert_model, tokenizer
 
 

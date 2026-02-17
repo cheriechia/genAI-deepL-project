@@ -1,0 +1,46 @@
+{
+  "os":  "Windows-11-10.0.26200-SP0",
+  "python":  "CPython 3.12.12",
+  "startedAt":  "2026-02-17T12:22:25.964574Z",
+  "args":  [
+    "--mode",
+    "single",
+    "--model",
+    "lstm"
+  ],
+  "program":  "C:\\Online Courses\\NYP\\GenAIandDeepL\\genAI-deepL-project\\main.py",
+  "codePath":  "main.py",
+  "codePathLocal":  "main.py",
+  "git":  {
+    "remote":  "https://github.com/cheriechia/genAI-deepL-project.git",
+    "commit":  "f9e92601a32ab9b353a161e3fb6282de57497483"
+  },
+  "email":  "chiaruiqi@yahoo.com.sg",
+  "root":  "C:\\Online Courses\\NYP\\GenAIandDeepL\\genAI-deepL-project",
+  "host":  "CC",
+  "executable":  "C:\\Users\\sugar\\.conda\\envs\\genaideepl\\python.exe",
+  "cpu_count":  14,
+  "cpu_count_logical":  20,
+  "gpu":  "NVIDIA GeForce RTX 4060 Laptop GPU",
+  "gpu_count":  1,
+  "disk":  {
+    "/":  {
+      "total":  "1021821579264",
+      "used":  "1001742450688"
+    }
+  },
+  "memory":  {
+    "total":  "25480257536"
+  },
+  "gpu_nvidia":  [
+    {
+      "name":  "NVIDIA GeForce RTX 4060 Laptop GPU",
+      "memoryTotal":  "8585740288",
+      "cudaCores":  3072,
+      "architecture":  "Ada",
+      "uuid":  "GPU-045b9d4f-2303-85e9-6259-8cacf941a98d"
+    }
+  ],
+  "cudaVersion":  "12.6",
+  "writerId":  "7jekci712k1urb53796epgb03sxdwtrg"
+}

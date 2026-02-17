@@ -28,6 +28,21 @@ def _run(config):
     test_df = pd.read_csv("data/test_df.csv",
                           parse_dates=["publish_timestamp"])
     
+    # Load parameters from config
+    try:
+        model_name = str(config.model_name)
+        hidden_dim1 = int(config.hidden_dim1)
+        hidden_dim2 = int(config.hidden_dim2)
+        dropout = float(config.dropout)
+        learning_rate = float(config.learning_rate)
+        epochs = int(config.epochs)
+        batch_size = int(config.batch_size)
+    except AttributeError as e:
+        raise ValueError(f"Missing required config parameter: {e}")
+
+    except ValueError as e:
+        raise ValueError(f"Incorrect config value type: {e}")
+    
     # Define columns to be used in metadata model
     numeric_cols = [
         "following",
@@ -68,7 +83,7 @@ def _run(config):
         X_test_proc,
         y_train,
         y_test,
-        config.batch_size,
+        batch_size,
         g
     )
     
@@ -77,9 +92,9 @@ def _run(config):
 
     model = MetadataMLP(
         input_dim=input_dim,
-        hidden_dim1=config.hidden_dim1, 
-        hidden_dim2=config.hidden_dim2,
-        dropout=config.dropout
+        hidden_dim1=hidden_dim1, 
+        hidden_dim2=hidden_dim2,
+        dropout=dropout
     ).to(DEVICE)
 
     # Weights for class imbalance
@@ -89,7 +104,7 @@ def _run(config):
     criterion = torch.nn.CrossEntropyLoss(weight=class_weights)
     optimizer = torch.optim.AdamW(
         model.parameters(),
-        lr=config.learning_rate
+        lr=learning_rate
     )
 
     # Train
@@ -100,15 +115,20 @@ def _run(config):
         optimizer,
         criterion,
         DEVICE,
-        epochs=config.epochs,
+        epochs=epochs,
         patience=PATIENCE
     )
 
     # Log best F1
-    wandb.log({"best_macro_f1": best_f1})
+    wandb.log({
+        "model": model_name,
+        "best_macro_f1": best_f1
+    })
 
     # Save best model
-    torch.save(model.state_dict(), "best_model.pt")
+    save_path = f"best_model_{model_name}.pt"
+    torch.save(model.state_dict(), save_path)
+    print(f"Saved best model to {save_path}")
 
 
 # ----------------------------

@@ -15,38 +15,34 @@ def train_epoch(model, loader, optimizer, criterion, device):
         # Detect if batch is a dict (BERT-style) or tuple (LSTM/MLP/CNN)
         if isinstance(batch, dict):
             # BERT-style
-            input_ids = batch["input_ids"].to(device)
+            X = batch["input_ids"].to(device)
             attention_mask = batch["attention_mask"].to(device)
-            labels = batch["labels"].to(device)
+            y = batch["labels"].to(device)
+            logits = model(X, attention_mask)
 
-            optimizer.zero_grad()
-            logits = model(input_ids, attention_mask)
-            loss = criterion(logits, labels)
-            loss.backward()
-            optimizer.step()
-        
         else:
             # Tuple-style: (X, y) for LSTM, MLP, CNN
             X, y = batch
             # Move x y to same device
             X, y = X.to(device), y.to(device)
-            # Clear old gradients from previous batch
-            optimizer.zero_grad()
             # Feeds batch into model, perform forward pass, output logits
             logits = model(X)
-            # Compute loss for this batch
-            loss = criterion(logits, y)
-            # Performs backpropagation: computes gradients of the loss with respect to each model parameter.
-            loss.backward()
-            # Updates model parameters using those gradients
-            optimizer.step()
+            
+        # Clear old gradients from previous batch
+        optimizer.zero_grad()
+        # Compute loss for this batch
+        loss = criterion(logits, y)
+        # Performs backpropagation: computes gradients of the loss with respect to each model parameter.
+        loss.backward()
+        # Updates model parameters using those gradients
+        optimizer.step()
 
         # Adds the numeric loss value (converted from a tensor with .item()) to the total loss accumulator.
         total_loss += loss.item()
 
         preds = logits.argmax(dim=1)
         all_preds.extend(preds.detach().cpu().numpy())
-        all_labels.extend(labels.detach().cpu().numpy())
+        all_labels.extend(y.detach().cpu().numpy())
 
     # Average loss = total loss / number of batches
     train_loss = total_loss / len(loader)
@@ -65,16 +61,14 @@ def eval_epoch(model, loader, criterion, device):
     with torch.no_grad():
         for batch in loader:
             if isinstance(batch, dict):
-                input_ids = batch["input_ids"].to(device)
+                X = batch["input_ids"].to(device)
                 attention_mask = batch["attention_mask"].to(device)
-                labels = batch["labels"].to(device)
+                y = batch["labels"].to(device)
+                logits = model(X, attention_mask)
 
-                logits = model(input_ids, attention_mask)
-                y = labels
             else:
                 X, y = batch
-                X, y = X.to(device), y.to(device)
-    
+                X, y = X.to(device), y.to(device)    
                 logits = model(X)
 
             loss = criterion(logits, y)
@@ -82,7 +76,7 @@ def eval_epoch(model, loader, criterion, device):
 
             preds = logits.argmax(dim=1)
             all_preds.extend(preds.cpu().numpy())
-            all_labels.extend(labels.cpu().numpy())
+            all_labels.extend(y.cpu().numpy())
 
     # Compute average loss
     eval_loss = total_loss / len(loader)
@@ -104,6 +98,7 @@ def train_model(model,
     class_names = ["Low", "Medium", "High"]
 
     for epoch in range(epochs):
+        print(epoch)
 
         train_loss, train_preds, train_labels = train_epoch(
             model, train_loader, optimizer, criterion, device

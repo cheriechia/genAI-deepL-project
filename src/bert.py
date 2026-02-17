@@ -12,11 +12,9 @@ from src.bert_model import load_bert, CaptionBERT
 from src.train import train_model
 
 
-def _run(config):
+def _run(config, mode):
     """
     Core training function that both sweep and baseline call.
-    config must contain:
-        max_len, dropout, learning_rate, freeze_bert, batch_size, hidden_dim, epochs
     """
     set_seed(SEED)
 
@@ -32,15 +30,47 @@ def _run(config):
     y_train = train_df["engagement_label"].values
     y_test = test_df["engagement_label"].values
 
+    # Load parameters from config
+    try:
+        model_name = str(config.model_name)
+        max_len = int(config.max_len)
+        batch_size = int(config.batch_size)
+        hidden_dim = int(config.hidden_dim)
+        dropout = float(config.dropout)
+        learning_rate = float(config.learning_rate)
+        epochs = int(config.epochs)
+
+        freeze_bert = (
+            config.freeze_bert if isinstance(config.freeze_bert, bool)
+            else str(config.freeze_bert).lower() == "true"
+        )
+
+    except AttributeError as e:
+        raise ValueError(f"Missing required config parameter: {e}")
+
+    except ValueError as e:
+        raise ValueError(f"Incorrect config value type: {e}")
+
+    if mode == "sweep":
+        # Skip invalid combinations
+        if freeze_bert and learning_rate in [2e-5, 5e-5]:
+            print(f"Skipping run: freeze_bert={freeze_bert}, learning_rate={learning_rate}")
+            return
+
+        if not freeze_bert and learning_rate in [1e-3, 5e-4]:
+            print(f"Skipping run: freeze_bert={freeze_bert}, learning_rate={learning_rate}")
+            return
+
+
     # Load BERT model and tokenizer
-    bert_model, tokenizer = load_bert(config.max_len)
+    bert_model, tokenizer = load_bert(max_len)
 
     # Tokenize train and test sets separately
     train_encodings = tokenizer(
         train_df["caption"].tolist(),
         padding="max_length",
         truncation=True,
-        max_length=config.max_len,
+        max_length=max_len,
         return_tensors="pt"
     )
 
@@ -48,7 +78,7 @@ def _run(config):
         test_df["caption"].tolist(),
         padding="max_length",
         truncation=True,
-        max_length=config.max_len,
+        max_length=max_len,
         return_tensors="pt"
     )
 
@@ -61,17 +91,17 @@ def _run(config):
         test_encodings,
         y_train,
         y_test,
-        config.batch_size,
+        batch_size,
         g
     )
 
     model = CaptionBERT(
         bert_model,
-        hidden_dim=config.hidden_dim,
-        dropout=config.dropout
+        hidden_dim=hidden_dim,
+        dropout=dropout
     ).to(DEVICE)
 
-    if config.freeze_bert:
+    if freeze_bert:
         for p in model.bert.parameters():
             p.requires_grad = False
 
@@ -82,7 +112,7 @@ def _run(config):
     criterion = torch.nn.CrossEntropyLoss(weight=class_weights)
     optimizer = torch.optim.AdamW(
         filter(lambda p: p.requires_grad, model.parameters()),
-        lr=config.learning_rate
+        lr=learning_rate
     )
 
     # Train
@@ -93,15 +123,20 @@ def _run(config):
         optimizer,
         criterion,
         DEVICE,
-        epochs=config.epochs,
+        epochs=epochs,
         patience=PATIENCE
     )
 
     # Log best F1
-    wandb.log({"best_macro_f1": best_f1})
+    wandb.log({
+        "model": model_name,
+        "best_macro_f1": best_f1
+    })
 
     # Save best model
-    torch.save(model.state_dict(), "best_model.pt")
+    save_path = f"best_model_{model_name}.pt"
+    torch.save(model.state_dict(), save_path)
+    print(f"Saved best model to {save_path}")
 
 
 # ----------------------------
@@ -116,14 +151,15 @@ def run_sweep():
     wandb.init()
     config = wandb.config
 
-    # Provide default epoch count for sweeps
-    if not hasattr(config, "epochs"):
-        config.epochs = 50
+    # # Provide default epoch count for sweeps
+    # if not hasattr(config, "epochs"):
+    #     config.epochs = 50
 
-    _run(config)
+    mode = "sweep"
+    _run(config, mode)
 
 
-def run_baseline(config_file="baseline.yaml", project="bert-sweep"):
+def run_baseline(config_file="baseline.yaml", project="instagram-posts"):
     """
     Single-run baseline.
     config_override: dict of fixed parameters, e.g. max_len, dropout, learning_rate
@@ -135,8 +171,9 @@ def run_baseline(config_file="baseline.yaml", project="bert-sweep"):
     wandb.init(project=project, config=config_dict)
     config = wandb.config
 
-    # Provide default epoch count for baseline
-    if not hasattr(config, "epochs"):
-        config.epochs = 1  # quick baseline
+    # # Provide default epoch count for baseline
+    # if not hasattr(config, "epochs"):
+    #     config.epochs = 1  # quick baseline
+    mode = "baseline"
 
-    _run(config)
+    _run(config, mode)

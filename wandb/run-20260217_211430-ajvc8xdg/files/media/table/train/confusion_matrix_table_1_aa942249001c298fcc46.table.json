@@ -1,0 +1,1 @@
+{"columns": ["Actual", "Predicted", "nPredictions"], "data": [["Low", "Low", 139.0], ["Low", "Medium", 257.0], ["Low", "High", 66.0], ["Medium", "Low", 106.0], ["Medium", "Medium", 337.0], ["Medium", "High", 53.0], ["High", "Low", 87.0], ["High", "Medium", 358.0], ["High", "High", 68.0]]}

@@ -1,0 +1,134 @@
+[34m[1mwandb[0m: Detected [huggingface_hub.inference] in use.
+[34m[1mwandb[0m: Use W&B Weave for improved LLM call tracing. Install Weave with `pip install weave` then add `import weave` to the top of your script.
+[34m[1mwandb[0m: For more information, check out the docs at: https://weave-docs.wandb.ai/
+0
+
+Epoch 1
+Train | loss=1.1108, acc=0.340, macro f1=0.336
+Train Confusion Matrix:
+[[119 169 174]
+ [139 180 177]
+ [127 185 201]]
+Test  | loss=1.1053, acc=0.319, macro f1=0.264
+Test Confusion Matrix:
+[[ 6 42 99]
+ [ 8 27 79]
+ [ 4 24 87]]
+1
+
+Epoch 2
+Train | loss=1.1085, acc=0.343, macro f1=0.343
+Train Confusion Matrix:
+[[146 159 157]
+ [123 192 181]
+ [159 187 167]]
+Test  | loss=1.0972, acc=0.354, macro f1=0.334
+Test Confusion Matrix:
+[[24 50 73]
+ [15 35 64]
+ [12 29 74]]
+2
+
+Epoch 3
+Train | loss=1.1068, acc=0.354, macro f1=0.354
+Train Confusion Matrix:
+[[165 153 144]
+ [155 179 162]
+ [152 184 177]]
+Test  | loss=1.0886, acc=0.410, macro f1=0.406
+Test Confusion Matrix:
+[[55 45 47]
+ [29 38 47]
+ [22 32 61]]
+3
+
+Epoch 4
+Train | loss=1.1054, acc=0.359, macro f1=0.359
+Train Confusion Matrix:
+[[161 165 136]
+ [159 191 146]
+ [146 191 176]]
+Test  | loss=1.0821, acc=0.441, macro f1=0.442
+Test Confusion Matrix:
+[[63 57 27]
+ [27 53 34]
+ [25 40 50]]
+4
+
+Epoch 5
+Train | loss=1.0954, acc=0.383, macro f1=0.383
+Train Confusion Matrix:
+[[198 163 101]
+ [159 205 132]
+ [163 189 161]]
+Test  | loss=1.0753, acc=0.460, macro f1=0.448
+Test Confusion Matrix:
+[[85 35 27]
+ [40 38 36]
+ [31 34 50]]
+5
+
+Epoch 6
+Train | loss=1.0859, acc=0.385, macro f1=0.385
+Train Confusion Matrix:
+[[202 156 104]
+ [181 167 148]
+ [147 169 197]]
+Test  | loss=1.0707, acc=0.463, macro f1=0.456
+Test Confusion Matrix:
+[[80 42 25]
+ [35 45 34]
+ [27 39 49]]
+6
+
+Epoch 7
+Train | loss=1.0861, acc=0.387, macro f1=0.387
+Train Confusion Matrix:
+[[203 151 108]
+ [172 168 156]
+ [153 161 199]]
+Test  | loss=1.0651, acc=0.473, macro f1=0.460
+Test Confusion Matrix:
+[[88 35 24]
+ [43 38 33]
+ [32 31 52]]
+7
+
+Epoch 8
+Train | loss=1.0773, acc=0.406, macro f1=0.406
+Train Confusion Matrix:
+[[220 136 106]
+ [160 183 153]
+ [149 170 194]]
+Test  | loss=1.0615, acc=0.476, macro f1=0.465
+Test Confusion Matrix:
+[[86 37 24]
+ [38 41 35]
+ [29 34 52]]
+8
+
+Epoch 9
+Train | loss=1.0732, acc=0.415, macro f1=0.415
+Train Confusion Matrix:
+[[195 148 119]
+ [155 193 148]
+ [130 161 222]]
+Test  | loss=1.0568, acc=0.484, macro f1=0.472
+Test Confusion Matrix:
+[[89 33 25]
+ [37 41 36]
+ [30 33 52]]
+9
+
+Epoch 10
+Train | loss=1.0744, acc=0.406, macro f1=0.403
+Train Confusion Matrix:
+[[220 141 101]
+ [197 143 156]
+ [141 138 234]]
+Test  | loss=1.0499, acc=0.489, macro f1=0.463
+Test Confusion Matrix:
+[[101  23  23]
+ [ 50  31  33]
+ [ 37  26  52]]
+Saved best model to best_model_bert.pt

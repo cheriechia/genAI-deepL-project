@@ -1,0 +1,83 @@
+[34m[1mwandb[0m: Detected [huggingface_hub.inference] in use.
+[34m[1mwandb[0m: Use W&B Weave for improved LLM call tracing. Install Weave with `pip install weave` then add `import weave` to the top of your script.
+[34m[1mwandb[0m: For more information, check out the docs at: https://weave-docs.wandb.ai/
+0
+
+Epoch 1
+Train | loss=1.1167, acc=0.413, macro f1=0.412
+Train Confusion Matrix:
+[[211 110 141]
+ [153 167 176]
+ [121 162 230]]
+Test  | loss=1.0324, acc=0.508, macro f1=0.505
+Test Confusion Matrix:
+[[81 50 16]
+ [36 62 16]
+ [27 40 48]]
+1
+
+Epoch 2
+Train | loss=1.0467, acc=0.452, macro f1=0.449
+Train Confusion Matrix:
+[[254 103 105]
+ [167 163 166]
+ [121 144 248]]
+Test  | loss=1.0051, acc=0.500, macro f1=0.476
+Test Confusion Matrix:
+[[83 21 43]
+ [36 28 50]
+ [28 10 77]]
+2
+
+Epoch 3
+Train | loss=1.0399, acc=0.453, macro f1=0.449
+Train Confusion Matrix:
+[[247 115 100]
+ [164 157 175]
+ [129 121 263]]
+Test  | loss=1.0102, acc=0.481, macro f1=0.454
+Test Confusion Matrix:
+[[77 17 53]
+ [30 24 60]
+ [24 11 80]]
+3
+
+Epoch 4
+Train | loss=1.0283, acc=0.459, macro f1=0.453
+Train Confusion Matrix:
+[[257  96 109]
+ [167 152 177]
+ [114 133 266]]
+Test  | loss=0.9981, acc=0.484, macro f1=0.451
+Test Confusion Matrix:
+[[91 18 38]
+ [47 22 45]
+ [34 12 69]]
+4
+
+Epoch 5
+Train | loss=1.0287, acc=0.475, macro f1=0.473
+Train Confusion Matrix:
+[[255 121  86]
+ [156 188 152]
+ [129 129 255]]
+Test  | loss=1.0036, acc=0.513, macro f1=0.502
+Test Confusion Matrix:
+[[75 23 49]
+ [29 39 46]
+ [25 11 79]]
+5
+
+Epoch 6
+Train | loss=1.0009, acc=0.494, macro f1=0.492
+Train Confusion Matrix:
+[[265 103  94]
+ [135 187 174]
+ [107 131 275]]
+Test  | loss=0.9836, acc=0.511, macro f1=0.497
+Test Confusion Matrix:
+[[85 31 31]
+ [40 37 37]
+ [29 16 70]]
+Early stopping triggered
+Saved best model to best_model_cnn.pt

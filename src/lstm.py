@@ -49,6 +49,22 @@ def _run(config):
     train_df["caption"] = train_df["caption"].fillna("")
     test_df["caption"] = test_df["caption"].fillna("")
 
+    # Load parameters from config
+    try:
+        model_name = str(config.model_name)
+        max_len = int(config.max_len)
+        batch_size = int(config.batch_size)
+        hidden_dim = int(config.hidden_dim)
+        embed_dim = int(config.embed_dim)
+        dropout = float(config.dropout)
+        learning_rate = float(config.learning_rate)
+        epochs = int(config.epochs)
+    except AttributeError as e:
+        raise ValueError(f"Missing required config parameter: {e}")
+
+    except ValueError as e:
+        raise ValueError(f"Incorrect config value type: {e}")
+
     # Build vocab
     all_tokens = []
     for caption in train_df['caption']:
@@ -63,11 +79,11 @@ def _run(config):
 
     # Apply encoding to train and test
     train_df["caption_seq"] = train_df["caption"].apply(
-        lambda x: encode_caption(x, vocab, config.max_len)
+        lambda x: encode_caption(x, vocab, max_len)
     )
 
     test_df["caption_seq"] = test_df["caption"].apply(
-        lambda x: encode_caption(x, vocab, config.max_len)
+        lambda x: encode_caption(x, vocab, max_len)
     )
 
     X_train = train_df["caption_seq"].tolist()
@@ -85,15 +101,15 @@ def _run(config):
         X_test,
         y_train,
         y_test,
-        config.batch_size,
+        batch_size,
         g
     )
 
     model = CaptionRNN(
         vocab_size=vocab_size,
-        embed_dim=config.embed_dim,
-        hidden_dim=config.hidden_dim,
-        dropout=config.dropout
+        embed_dim=embed_dim,
+        hidden_dim=hidden_dim,
+        dropout=dropout
     ).to(DEVICE)
 
     # Weights for class imbalance
@@ -103,7 +119,7 @@ def _run(config):
     criterion = torch.nn.CrossEntropyLoss(weight=class_weights)
     optimizer = torch.optim.AdamW(
         model.parameters(),
-        lr=config.learning_rate
+        lr=learning_rate
     )
 
     # Train
@@ -114,15 +130,20 @@ def _run(config):
         optimizer,
         criterion,
         DEVICE,
-        epochs=config.epochs,
+        epochs=epochs,
         patience=PATIENCE
     )
 
     # Log best F1
-    wandb.log({"best_macro_f1": best_f1})
+    wandb.log({
+        "model": model_name,
+        "best_macro_f1": best_f1
+    })
 
     # Save best model
-    torch.save(model.state_dict(), "best_model.pt")
+    save_path = f"best_model_{model_name}.pt"
+    torch.save(model.state_dict(), save_path)
+    print(f"Saved best model to {save_path}")
 
 
 # ----------------------------
@@ -137,9 +158,9 @@ def run_sweep():
     wandb.init()
     config = wandb.config
 
-    # Provide default epoch count for sweeps
-    if not hasattr(config, "epochs"):
-        config.epochs = 50
+    # # Provide default epoch count for sweeps
+    # if not hasattr(config, "epochs"):
+    #     config.epochs = 50
 
     _run(config)
 
@@ -156,8 +177,8 @@ def run_baseline(config_file="baseline.yaml", project="bert-sweep"):
     wandb.init(project=project, config=config_dict)
     config = wandb.config
 
-    # Provide default epoch count for baseline
-    if not hasattr(config, "epochs"):
-        config.epochs = 1  # quick baseline
+    # # Provide default epoch count for baseline
+    # if not hasattr(config, "epochs"):
+    #     config.epochs = 1  # quick baseline
 
     _run(config)

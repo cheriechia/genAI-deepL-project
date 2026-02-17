@@ -1,3 +1,5 @@
+model_name: "cnn"
+
 method: grid
 
 metric:
@@ -5,14 +7,23 @@ metric:
   goal: maximize
 
 parameters:
+
   dropout:
-    values: [0.3, 0.5]
+    values:
+      - 0.3
+      - 0.5
 
   freeze_resnet:
-    values: [true, false]
+    values:
+      - true
+      - false
 
   lr_backbone:
-  values: [None, 1e-3]
+    values:
+      - null
+      - 0.001
 
   lr_head:
-    value: [1e-3, 1e-3]
+    values:
+      - 0.001
+      - 0.0005

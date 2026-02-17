@@ -1,5 +1,8 @@
+model_name: "cnn"
 dropout: 0.5
-learning_rate: 1e-3
+learning_rate: 0.001
 freeze_resnet: true
 batch_size: 32
-epochs: 1
+epochs: 10
+lr_backbone: null
+lr_head: 0.001
