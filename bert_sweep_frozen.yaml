@@ -1,0 +1,33 @@
+method: bayes
+
+metric:
+  name: best_macro_f1
+  goal: maximize
+
+parameters:
+  model_name:
+    value: "bert"
+
+  epochs: 
+    value: 50  
+
+  max_len:
+    values: [64, 128]
+
+  freeze_bert:
+    value: true
+
+  batch_size:
+    value: 32
+
+  hidden_dim:
+    value: 256
+
+  dropout:
+    min: 0.3
+    max: 0.5
+
+  learning_rate:
+    min: 0.0005
+    max: 0.001
+    distribution: log_uniform

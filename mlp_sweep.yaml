@@ -1,5 +1,3 @@
-model_name: "mlp"
-
 method: grid
 
 metric:
@@ -7,6 +5,12 @@ metric:
   goal: maximize
 
 parameters:
+  model_name:
+    value: "mlp"
+
+  epochs: 
+    value: 50  
+
   hidden_dim1:
     values: [32, 64, 128]
 

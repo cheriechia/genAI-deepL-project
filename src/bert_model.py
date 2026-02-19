@@ -1,7 +1,7 @@
 # src/bert_model.py
 
 import torch.nn as nn
-from unsloth import FastLanguageModel
+# from unsloth import FastLanguageModel
 from transformers import BertTokenizer
 from transformers import BertModel
 

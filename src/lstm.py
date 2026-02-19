@@ -12,6 +12,7 @@ from src.utils import set_seed, compute_weights
 from src.lstm_dataset import create_dataloaders
 from src.lstm_model import CaptionRNN
 from src.train import train_model
+from src.save_best import save_best_model
 
 # Simple tokenizer: split on spaces, remove non-alphanumeric chars
 def tokenize(text):
@@ -32,7 +33,7 @@ def encode_caption(caption, vocab, max_len):
         seq = seq[:max_len]
     return seq
 
-def _run(config):
+def _run(config, mode):
     """
     Core training function that both sweep and baseline call.
     config must contain:
@@ -123,7 +124,7 @@ def _run(config):
     )
 
     # Train
-    best_f1 = train_model(
+    best_f1, best_state_dict = train_model(
         model,
         train_loader,
         test_loader,
@@ -134,16 +135,22 @@ def _run(config):
         patience=PATIENCE
     )
 
-    # Log best F1
-    wandb.log({
-        "model": model_name,
-        "best_macro_f1": best_f1
-    })
+    # Load best weights back into model
+    model.load_state_dict(best_state_dict)
 
-    # Save best model
-    save_path = f"best_model_{model_name}.pt"
-    torch.save(model.state_dict(), save_path)
-    print(f"Saved best model to {save_path}")
+    # Save only ONCE here (best model of single run in sweep)
+    save_best_model(model, model_name, mode, best_f1)
+
+    # # Log best F1
+    # wandb.log({
+    #     "model": model_name,
+    #     "best_macro_f1": best_f1
+    # })
+
+    # # Save best model
+    # save_path = f"best_model_{model_name}.pt"
+    # torch.save(model.state_dict(), save_path)
+    # print(f"Saved best model to {save_path}")
 
 
 # ----------------------------

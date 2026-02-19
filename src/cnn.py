@@ -11,6 +11,7 @@ from src.utils import set_seed, compute_weights
 from src.cnn_dataset import create_dataloaders
 from src.cnn_model import ImageResNet
 from src.train import train_model
+from src.save_best import save_best_model
 
 from torchvision import transforms
 import torchvision.models as models
@@ -35,7 +36,7 @@ def extract_first_image_path(x):
         return None
 
 
-def _run(config):
+def _run(config, mode):
     """
     Core training function that both sweep and baseline call.
     config must contain:
@@ -57,7 +58,6 @@ def _run(config):
         model_name = str(config.model_name)
         dropout = float(config.dropout)
         batch_size = int(config.batch_size)
-        learning_rate = float(config.learning_rate)
         epochs = int(config.epochs)
         freeze_resnet = (
             config.freeze_resnet if isinstance(config.freeze_resnet, bool)
@@ -179,7 +179,7 @@ def _run(config):
     criterion = torch.nn.CrossEntropyLoss(weight=class_weights)
 
     # Train
-    best_f1 = train_model(
+    best_f1, best_state_dict = train_model(
         model,
         train_loader,
         test_loader,
@@ -190,16 +190,22 @@ def _run(config):
         patience=PATIENCE
     )
 
-    # Log best F1
-    wandb.log({
-        "model": model_name,
-        "best_macro_f1": best_f1
-    })
+    # Load best weights back into model
+    model.load_state_dict(best_state_dict)
 
-    # Save best model
-    save_path = f"best_model_{model_name}.pt"
-    torch.save(model.state_dict(), save_path)
-    print(f"Saved best model to {save_path}")
+    # Save only ONCE here (best model of single run in sweep)
+    save_best_model(model, model_name, mode, best_f1)
+
+    # # Log best F1
+    # wandb.log({
+    #     "model": model_name,
+    #     "best_macro_f1": best_f1
+    # })
+
+    # # Save best model
+    # save_path = f"best_model_{model_name}.pt"
+    # torch.save(model.state_dict(), save_path)
+    # print(f"Saved best model to {save_path}")
 
 
 # ----------------------------

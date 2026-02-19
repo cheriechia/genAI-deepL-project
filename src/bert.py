@@ -4,12 +4,14 @@ import wandb
 import torch
 import pandas as pd
 import yaml
+import tempfile
 
 from src.config import DEVICE, SEED, PATIENCE
 from src.utils import set_seed, compute_weights
 from src.bert_dataset import create_dataloaders
 from src.bert_model import load_bert, CaptionBERT
 from src.train import train_model
+from src.save_best import save_best_model
 
 
 def _run(config, mode):
@@ -51,15 +53,15 @@ def _run(config, mode):
     except ValueError as e:
         raise ValueError(f"Incorrect config value type: {e}")
 
-    if mode == "sweep":
-        # Skip invalid combinations
-        if freeze_bert and learning_rate in [2e-5, 5e-5]:
-            print(f"Skipping run: freeze_bert={freeze_bert}, learning_rate={learning_rate}")
-            return
+    # if mode == "sweep":
+    #     # Skip invalid combinations
+    #     if freeze_bert and learning_rate in [2e-5, 5e-5]:
+    #         print(f"Skipping run: freeze_bert={freeze_bert}, learning_rate={learning_rate}")
+    #         return
 
-        if not freeze_bert and learning_rate in [1e-3, 5e-4]:
-            print(f"Skipping run: freeze_bert={freeze_bert}, learning_rate={learning_rate}")
-            return
+    #     if not freeze_bert and learning_rate in [1e-3, 5e-4]:
+    #         print(f"Skipping run: freeze_bert={freeze_bert}, learning_rate={learning_rate}")
+    #         return
 
 
     # Load BERT model and tokenizer
@@ -101,22 +103,39 @@ def _run(config, mode):
         dropout=dropout
     ).to(DEVICE)
 
-    if freeze_bert:
-        for p in model.bert.parameters():
-            p.requires_grad = False
-
     # Weights for class imbalance
     class_weights = compute_weights(y_train, DEVICE)
 
     # Loss & optimizer
     criterion = torch.nn.CrossEntropyLoss(weight=class_weights)
-    optimizer = torch.optim.AdamW(
-        filter(lambda p: p.requires_grad, model.parameters()),
-        lr=learning_rate
-    )
+
+    if freeze_bert: # prevents BERT weights from being updated
+        for p in model.bert.parameters(): # for all trainable tensors in BERT
+            p.requires_grad = False         # don't compute gradients for tensor
+        # Set optimizer for frozen BERT
+        optimizer = torch.optim.AdamW(
+            filter(lambda p: p.requires_grad, model.parameters()),
+            lr=learning_rate
+        )
+    else:
+        for param in model.bert.parameters(): # freeze everything first
+            param.requires_grad = False 
+        for layer in model.bert.encoder.layer[-2:]: # unfreeze top 2 BERT layers
+            for param in layer.parameters():
+                param.requires_grad = True
+        for param in model.fc_hidden.parameters(): # train classifier head
+            param.requires_grad = True
+        for param in model.fc_out.parameters():
+            param.requires_grad = True
+        # Set optimizer from partially unfrozen BERT
+        optimizer = torch.optim.AdamW([
+            {"params": model.bert.encoder.layer[-2:].parameters(), "lr": 2e-5},
+            {"params": model.fc_hidden.parameters(), "lr": learning_rate},
+            {"params": model.fc_out.parameters(), "lr": learning_rate},
+        ])
 
     # Train
-    best_f1 = train_model(
+    best_f1, best_state_dict = train_model(
         model,
         train_loader,
         test_loader,
@@ -127,18 +146,42 @@ def _run(config, mode):
         patience=PATIENCE
     )
 
-    # Log best F1
-    wandb.log({
-        "model": model_name,
-        "best_macro_f1": best_f1
-    })
+    # # Log best F1
+    # wandb.log({
+    #     "model": model_name,
+    #     "best_macro_f1": best_f1
+    # })
 
-    # Save best model
-    save_path = f"best_model_{model_name}.pt"
-    torch.save(model.state_dict(), save_path)
-    print(f"Saved best model to {save_path}")
+    # Load best weights back into model
+    model.load_state_dict(best_state_dict)
 
+    # Save only ONCE here (best model of single run in sweep)
+    save_best_model(model, model_name, mode, best_f1)
 
+    # # Save best model
+    # if mode == 'baseline':
+    #     save_path = f"best_model_{model_name}.pt"
+    #     torch.save(model.state_dict(), save_path)
+    #     print(f"Saved best model to local {save_path}")
+    # else:
+    #     # Save model directly to W&B without keeping a permanent local copy
+    #     with tempfile.NamedTemporaryFile(suffix=".pt") as tmp_file:
+    #         torch.save(model.state_dict(), tmp_file.name)
+            
+    #         artifact = wandb.Artifact(
+    #             name=f"model-{wandb.run.id}",
+    #             type="model"
+    #         )
+    #         artifact.add_file(tmp_file.name)
+    #         wandb.log_artifact(artifact)
+    #         print(f"Saved best model to W&B artifact {artifact.name}")
+
+    # artifact = wandb.Artifact(
+    #     name=f"model-{wandb.run.id}",
+    #     type="model"
+    # )
+    # artifact.add_file(save_path)
+    # wandb.log_artifact(artifact)
 # ----------------------------
 # Functions exposed to main.py
 # ----------------------------
