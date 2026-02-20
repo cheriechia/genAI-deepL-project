@@ -119,31 +119,6 @@ def train_model(model,
             test_preds, test_labels
         )
 
-        # Log metrics per epoch
-        wandb.log({
-            "epoch": epoch,
-
-            "train/loss": train_loss,
-            "train/macro_f1": train_macro_f1,
-            "train/accuracy": train_acc,
-            "train/confusion_matrix":
-                wandb.plot.confusion_matrix(
-                    preds=train_preds,
-                    y_true=train_labels,
-                    class_names=class_names
-                ),
-
-            "test/loss": test_loss,
-            "test/macro_f1": test_macro_f1,
-            "test/accuracy": test_acc,
-            "test/confusion_matrix":
-                wandb.plot.confusion_matrix(
-                    preds=test_preds,
-                    y_true=test_labels,
-                    class_names=class_names
-                )
-        })
-
         # Early stopping based on test macro-F1
         if test_macro_f1 > best_f1:
             # Update best F1
@@ -151,6 +126,30 @@ def train_model(model,
             # Reset patience counter
             no_improve = 0
 
+            # Log metrics per epoch if improve
+            wandb.log({
+                "epoch": epoch,
+
+                "train/loss": train_loss,
+                "train/macro_f1": train_macro_f1,
+                "train/accuracy": train_acc,
+                "train/confusion_matrix":
+                    wandb.plot.confusion_matrix(
+                        preds=train_preds,
+                        y_true=train_labels,
+                        class_names=class_names
+                    ),
+
+                "test/loss": test_loss,
+                "test/macro_f1": test_macro_f1,
+                "test/accuracy": test_acc,
+                "test/confusion_matrix":
+                    wandb.plot.confusion_matrix(
+                        preds=test_preds,
+                        y_true=test_labels,
+                        class_names=class_names
+                    )
+            })
             best_state_dict = copy.deepcopy(model.state_dict())  # store weights in memory
         else:
             no_improve += 1

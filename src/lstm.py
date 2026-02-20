@@ -162,17 +162,14 @@ def run_sweep():
     Function to be used with wandb.agent for sweeps.
     Reads config automatically from wandb.
     """
-    wandb.init()
+    wandb.init(save_code=False, settings=wandb.Settings(console="off"))
     config = wandb.config
 
-    # # Provide default epoch count for sweeps
-    # if not hasattr(config, "epochs"):
-    #     config.epochs = 50
-
-    _run(config)
+    mode = "sweep"
+    _run(config, mode)
 
 
-def run_baseline(config_file="baseline.yaml", project="bert-sweep"):
+def run_baseline(config_file="baseline.yaml", project="instagram-posts"):
     """
     Single-run baseline.
     config_override: dict of fixed parameters, e.g. max_len, dropout, learning_rate
@@ -181,11 +178,9 @@ def run_baseline(config_file="baseline.yaml", project="bert-sweep"):
     with open(config_file, "r") as f:
         config_dict = yaml.safe_load(f)
 
-    wandb.init(project=project, config=config_dict)
+    wandb.init(project=project, config=config_dict, save_code=False, settings=wandb.Settings(console="off"))
     config = wandb.config
+    
+    mode = "baseline"
 
-    # # Provide default epoch count for baseline
-    # if not hasattr(config, "epochs"):
-    #     config.epochs = 1  # quick baseline
-
-    _run(config)
+    _run(config, mode)

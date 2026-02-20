@@ -30,4 +30,4 @@ parameters:
   learning_rate:
     min: 0.00002
     max: 0.00005
-    distribution: log_uniform
+    distribution: log_uniform_values

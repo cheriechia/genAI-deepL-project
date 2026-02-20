@@ -17,6 +17,9 @@ parameters:
 
   freeze_resnet:
     value: true
+  
+  batch_size: 
+    value: 32
 
   lr_backbone:
     value: null
@@ -24,3 +27,4 @@ parameters:
   lr_head:
     min: 0.0005
     max: 0.002
+    distribution: log_uniform_values

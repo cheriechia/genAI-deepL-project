@@ -1,6 +1,8 @@
 import argparse
 import wandb
 import yaml
+import os
+
 from src.bert import run_baseline as run_baseline_bert
 from src.bert import run_sweep as run_sweep_bert
 from src.cnn import run_baseline as run_baseline_cnn
@@ -23,6 +25,7 @@ def launch_sweep(model_name, sweep_file, run_function, project):
     wandb.agent(sweep_id, function=run_function, count=25) # limit sweeps to save time
 
 def main():
+
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--mode", type=str, default="baseline",
@@ -43,19 +46,19 @@ def main():
 
     # Map model names to baseline run functions
     baselines = [
-        ("bert", "bert_baseline.yaml", run_baseline_bert),
-        ("cnn", "cnn_baseline.yaml", run_baseline_cnn),
-        ("mlp", "mlp_baseline.yaml", run_baseline_mlp),
-        ("lstm", "lstm_baseline.yaml", run_baseline_lstm),
+        ("bert", "config/bert_baseline.yaml", run_baseline_bert),
+        ("cnn", "config/cnn_baseline.yaml", run_baseline_cnn),
+        ("mlp", "config/mlp_baseline.yaml", run_baseline_mlp),
+        ("lstm", "config/lstm_baseline.yaml", run_baseline_lstm),
     ]
     # Map model names to sweep files and run functions
     sweeps = [
-        ("bert", "bert_sweep_frozen.yaml", run_sweep_bert),
-        ("bert", "bert_sweep_unfrozen.yaml", run_sweep_bert),
-        ("cnn", "cnn_sweep_frozen.yaml", run_sweep_cnn),
-        ("cnn", "cnn_sweep_unfrozen.yaml", run_sweep_cnn),
-        ("mlp", "mlp_sweep.yaml", run_sweep_mlp),
-        ("lstm", "lstm_sweep.yaml", run_sweep_lstm),
+        ("bert", "config/bert_sweep_frozen.yaml", run_sweep_bert),
+        ("bert", "config/bert_sweep_unfrozen.yaml", run_sweep_bert),
+        ("cnn", "config/cnn_sweep_frozen.yaml", run_sweep_cnn),
+        ("cnn", "config/cnn_sweep_unfrozen.yaml", run_sweep_cnn),
+        ("mlp", "config/mlp_sweep.yaml", run_sweep_mlp),
+        ("lstm", "config/lstm_sweep.yaml", run_sweep_lstm),
     ]
 
     # Hyperparameter sweep
@@ -65,16 +68,17 @@ def main():
         processes = []
         for model_name, sweep_file, run_func in sweeps:
             if model_name == args.model: # if model name matches
-                p = multiprocessing.Process(
-                    target=launch_sweep,
-                    args=(model_name, sweep_file, run_func, args.project)
-                )
-                p.start()
-                processes.append(p)
+                # p = multiprocessing.Process(
+                #     target=launch_sweep,
+                #     args=(model_name, sweep_file, run_func, args.project)
+                # )
+                # p.start()
+                # processes.append(p)
+                launch_sweep(model_name, sweep_file, run_func, args.project)
 
         # Wait for all sweeps to finish
-        for p in processes:
-            p.join()
+        # for p in processes:
+        #     p.join()
 
         # elif args.model == "bert":
         #     launch_sweep(args.model, "bert_sweep.yaml", run_sweep_bert, args.project)
@@ -93,16 +97,18 @@ def main():
         processes = []
         for model_name, baseline_file, run_func in baselines:
             if model_name == args.model: # if model name matches
-                p = multiprocessing.Process(
-                    target=launch_baseline,
-                    args=(model_name, baseline_file, run_func, args.project)
-                )
-                p.start()
-                processes.append(p)
+                # p = multiprocessing.Process(
+                #     target=launch_baseline,
+                #     args=(model_name, baseline_file, run_func, args.project)
+                # )
+                # p.start()
+                # processes.append(p)
+
+                launch_baseline(model_name, baseline_file, run_func, args.project)
 
         # Wait for all sweeps to finish
-        for p in processes:
-            p.join()
+        # for p in processes:
+        #     p.join()
         # elif args.model == "bert":
         #     launch_baseline("bert", "bert_baseline.yaml", run_baseline_bert, project=args.project)
         # elif args.model == "cnn":
@@ -111,6 +117,14 @@ def main():
         #     launch_baseline("mlp", "mlp_baseline.yaml", run_baseline_mlp, project=args.project)
         # elif args.model == "lstm":
         #     launch_baseline("lstm", "lstm_baseline.yaml", run_baseline_lstm, project=args.project)
+
+        print("Finishing W&B run...")
+        wandb.finish()
+        print("Finished.")
+
+        # Now all runs are done — safe to clean W&B cache
+        os.system("wandb artifact cache cleanup")
+        os.system("wandb gc --yes")
 
 if __name__ == "__main__":
     main()

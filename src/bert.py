@@ -4,7 +4,6 @@ import wandb
 import torch
 import pandas as pd
 import yaml
-import tempfile
 
 from src.config import DEVICE, SEED, PATIENCE
 from src.utils import set_seed, compute_weights
@@ -191,12 +190,8 @@ def run_sweep():
     Function to be used with wandb.agent for sweeps.
     Reads config automatically from wandb.
     """
-    wandb.init()
+    wandb.init(save_code=False, settings=wandb.Settings(console="off"))
     config = wandb.config
-
-    # # Provide default epoch count for sweeps
-    # if not hasattr(config, "epochs"):
-    #     config.epochs = 50
 
     mode = "sweep"
     _run(config, mode)
@@ -211,12 +206,9 @@ def run_baseline(config_file="baseline.yaml", project="instagram-posts"):
     with open(config_file, "r") as f:
         config_dict = yaml.safe_load(f)
 
-    wandb.init(project=project, config=config_dict)
+    wandb.init(project=project, config=config_dict, save_code=False, settings=wandb.Settings(console="off"))
     config = wandb.config
-
-    # # Provide default epoch count for baseline
-    # if not hasattr(config, "epochs"):
-    #     config.epochs = 1  # quick baseline
+    
     mode = "baseline"
 
     _run(config, mode)
