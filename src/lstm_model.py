@@ -23,7 +23,7 @@ class CaptionRNN(nn.Module):
         self.relu = nn.ReLU()
         self.fc_out = nn.Linear(hidden_dim // 2, num_classes)
 
-    def forward(self, x):
+    def forward(self, x, return_features=False):
         emb = self.embedding(x)                     # (batch_size, seq_len, embed_dim)
         _, (hidden, _) = self.lstm(emb)             # lstm output: output, (hidden, cell). output: (batch, seq_len, hidden_dim). hidden: (num_layers*num_directions, batch_size, hidden_dim).
         h = hidden.squeeze(0)                       # (batch_size, hidden_dim), can squeeze because num_layers*num_directions = 1
@@ -31,5 +31,7 @@ class CaptionRNN(nn.Module):
         h = self.fc_hidden(h)                       # optional hidden layer
         h = self.relu(h)                            # non-linearity
         h = self.dropout(h)                         # another dropout
+        if return_features:
+            return x
         out = self.fc_out(h)                        # (batch_size, num_classes), output logits
         return out

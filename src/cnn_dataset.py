@@ -32,14 +32,14 @@ class ImageDataset(Dataset):
 
 def create_dataloaders(train_encodings, test_encodings,
                        train_transform, test_transform,
-                       batch_size, generator):
+                       batch_size, generator, shuffle_train=True):
     # Creating dataset objects
     train_ds = ImageDataset(train_encodings, transform=train_transform)
     test_ds = ImageDataset(test_encodings, transform=test_transform)
     
     # DataLoader splits data into batches
     train_loader = DataLoader(train_ds, batch_size=batch_size,
-                              shuffle=True, generator=generator)
+                              shuffle=shuffle_train, generator=generator)
     test_loader = DataLoader(test_ds, batch_size=batch_size,
                              shuffle=False)
 

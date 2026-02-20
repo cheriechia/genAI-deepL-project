@@ -15,6 +15,46 @@ from src.save_best import save_best_model
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
+def data_preparation(train_df, test_df):
+    # Define columns to be used in metadata model
+    numeric_cols = [
+        "following",
+        "follower_following_ratio",
+        "is_weekend",
+        "has_location",
+        "is_carousel",
+        "num_images",
+        "is_sponsored",
+        "caption_word_count",
+        "num_hashtags"
+    ]
+    categorical_cols = ["day", "hour"]
+    # select input features from dataframe
+    X_train = train_df[numeric_cols + categorical_cols]
+    X_test  = test_df[numeric_cols + categorical_cols]
+    # Preprocessor
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ("num", StandardScaler(), numeric_cols),
+            ("cat", OneHotEncoder(handle_unknown="ignore", sparse_output=False), categorical_cols)
+        ]
+    )
+    # apply preprocessing
+    X_train_proc = preprocessor.fit_transform(X_train)
+    X_test_proc  = preprocessor.transform(X_test)
+
+    # # Get new column names from ColumnTransformer
+    # num_features = numeric_cols
+    # cat_features = list(preprocessor.named_transformers_['cat'].get_feature_names_out(categorical_cols))
+    # all_features = num_features + cat_features
+
+    # # Replace train_df and test_df
+    # train_df_proc = pd.DataFrame(X_train_proc, columns=all_features, index=train_df.index)
+    # test_df_proc  = pd.DataFrame(X_test_proc, columns=all_features, index=test_df.index)
+    
+    # train_df_proc, test_df_proc, 
+    return X_train_proc, X_test_proc
+
 def _run(config, mode):
     """
     Core training function that both sweep and baseline call.
@@ -44,33 +84,36 @@ def _run(config, mode):
     except ValueError as e:
         raise ValueError(f"Incorrect config value type: {e}")
     
-    # Define columns to be used in metadata model
-    numeric_cols = [
-        "following",
-        "follower_following_ratio",
-        "is_weekend",
-        "has_location",
-        "is_carousel",
-        "num_images",
-        "is_sponsored",
-        "caption_word_count",
-        "num_hashtags"
-    ]
-    categorical_cols = ["day", "hour"]
-    # select input features from dataframe
-    X_train = train_df[numeric_cols + categorical_cols]
-    X_test  = test_df[numeric_cols + categorical_cols]
-    # Preprocessor
-    preprocessor = ColumnTransformer(
-        transformers=[
-            ("num", StandardScaler(), numeric_cols),
-            ("cat", OneHotEncoder(handle_unknown="ignore", sparse_output=False), categorical_cols)
-        ]
-    )
-    # apply preprocessing
-    X_train_proc = preprocessor.fit_transform(X_train)
-    X_test_proc  = preprocessor.transform(X_test)
+    # # Define columns to be used in metadata model
+    # numeric_cols = [
+    #     "following",
+    #     "follower_following_ratio",
+    #     "is_weekend",
+    #     "has_location",
+    #     "is_carousel",
+    #     "num_images",
+    #     "is_sponsored",
+    #     "caption_word_count",
+    #     "num_hashtags"
+    # ]
+    # categorical_cols = ["day", "hour"]
+    # # select input features from dataframe
+    # X_train = train_df[numeric_cols + categorical_cols]
+    # X_test  = test_df[numeric_cols + categorical_cols]
+    # # Preprocessor
+    # preprocessor = ColumnTransformer(
+    #     transformers=[
+    #         ("num", StandardScaler(), numeric_cols),
+    #         ("cat", OneHotEncoder(handle_unknown="ignore", sparse_output=False), categorical_cols)
+    #     ]
+    # )
+    # # apply preprocessing
+    # X_train_proc = preprocessor.fit_transform(X_train)
+    # X_test_proc  = preprocessor.transform(X_test)
     
+    # Data preparation
+    X_train_proc, X_test_proc = data_preparation(train_df, test_df)
+
     # Set labels
     y_train = train_df["engagement_label"].values
     y_test = test_df["engagement_label"].values

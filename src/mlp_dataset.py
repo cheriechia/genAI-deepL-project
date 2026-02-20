@@ -19,14 +19,14 @@ class MetadataDataset(Dataset):
 
 def create_dataloaders(train_encodings, test_encodings,
                        y_train, y_test,
-                       batch_size, generator):
+                       batch_size, generator, shuffle_train=True):
     # Creating dataset objects
     train_ds = MetadataDataset(train_encodings, y_train)
     test_ds = MetadataDataset(test_encodings, y_test)
-    
+
     # DataLoader splits data into batches
     train_loader = DataLoader(train_ds, batch_size=batch_size,
-                              shuffle=True, generator=generator)
+                              shuffle=shuffle_train, generator=generator)
     test_loader = DataLoader(test_ds, batch_size=batch_size,
                              shuffle=False)
 

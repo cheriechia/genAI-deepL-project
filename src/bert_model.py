@@ -7,14 +7,10 @@ from transformers import BertModel
 
 
 
-def load_bert(max_seq_length=128):
-    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
-    bert_model = BertModel.from_pretrained("bert-base-uncased")
-    # bert_model, tokenizer = FastLanguageModel.from_pretrained(
-    #     model_name="unsloth/bert-base-uncased",
-    #     max_seq_length=max_seq_length,
-    #     load_in_4bit=True,
-    # )
+def load_bert(model_name='bert-base-uncased', max_seq_length=128):
+    tokenizer = BertTokenizer.from_pretrained(model_name)
+    bert_model = BertModel.from_pretrained(model_name)
+
     return bert_model, tokenizer
 
 
@@ -30,7 +26,7 @@ class CaptionBERT(nn.Module):
         self.relu = nn.ReLU()
         self.fc_out = nn.Linear(hidden_dim, num_classes)
 
-    def forward(self, input_ids, attention_mask):
+    def forward(self, input_ids, attention_mask, return_features=False):
         outputs = self.bert(
             input_ids=input_ids,
             attention_mask=attention_mask
@@ -40,5 +36,7 @@ class CaptionBERT(nn.Module):
         x = self.fc_hidden(x)
         x = self.relu(x)
         x = self.dropout(x)
+        if return_features:
+            return x
         out = self.fc_out(x) # raw logits
         return out

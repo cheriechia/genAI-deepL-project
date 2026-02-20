@@ -12,6 +12,29 @@ from src.bert_model import load_bert, CaptionBERT
 from src.train import train_model
 from src.save_best import save_best_model
 
+def data_preparation(train_df, test_df, tokenizer, max_len):
+    # Fill missing captions with ""
+    train_df["caption"] = train_df["caption"].fillna("")
+    test_df["caption"] = test_df["caption"].fillna("")
+
+    # Tokenize train and test sets separately
+    train_encodings = tokenizer(
+        train_df["caption"].tolist(),
+        padding="max_length",
+        truncation=True,
+        max_length=max_len,
+        return_tensors="pt"
+    )
+
+    test_encodings = tokenizer(
+        test_df["caption"].tolist(),
+        padding="max_length",
+        truncation=True,
+        max_length=max_len,
+        return_tensors="pt"
+    )
+
+    return train_encodings, test_encodings
 
 def _run(config, mode):
     """
@@ -24,12 +47,6 @@ def _run(config, mode):
                            parse_dates=["publish_timestamp"])
     test_df = pd.read_csv("data/test_df.csv",
                           parse_dates=["publish_timestamp"])
-    # Fill missing captions with ""
-    train_df["caption"] = train_df["caption"].fillna("")
-    test_df["caption"] = test_df["caption"].fillna("")
-    # Set labels
-    y_train = train_df["engagement_label"].values
-    y_test = test_df["engagement_label"].values
 
     # Load parameters from config
     try:
@@ -52,36 +69,33 @@ def _run(config, mode):
     except ValueError as e:
         raise ValueError(f"Incorrect config value type: {e}")
 
-    # if mode == "sweep":
-    #     # Skip invalid combinations
-    #     if freeze_bert and learning_rate in [2e-5, 5e-5]:
-    #         print(f"Skipping run: freeze_bert={freeze_bert}, learning_rate={learning_rate}")
-    #         return
-
-    #     if not freeze_bert and learning_rate in [1e-3, 5e-4]:
-    #         print(f"Skipping run: freeze_bert={freeze_bert}, learning_rate={learning_rate}")
-    #         return
-
-
     # Load BERT model and tokenizer
-    bert_model, tokenizer = load_bert(max_len)
+    bert_model, tokenizer = load_bert(model_name='bert-base-uncased',
+                                      max_seq_length=max_len)
 
-    # Tokenize train and test sets separately
-    train_encodings = tokenizer(
-        train_df["caption"].tolist(),
-        padding="max_length",
-        truncation=True,
-        max_length=max_len,
-        return_tensors="pt"
-    )
+    # Data Preparation
+    train_encodings, test_encodings = data_preparation(train_df, test_df, tokenizer, max_len)
 
-    test_encodings = tokenizer(
-        test_df["caption"].tolist(),
-        padding="max_length",
-        truncation=True,
-        max_length=max_len,
-        return_tensors="pt"
-    )
+    # Set labels
+    y_train = train_df["engagement_label"].values
+    y_test = test_df["engagement_label"].values
+
+    # # Tokenize train and test sets separately
+    # train_encodings = tokenizer(
+    #     train_df["caption"].tolist(),
+    #     padding="max_length",
+    #     truncation=True,
+    #     max_length=max_len,
+    #     return_tensors="pt"
+    # )
+
+    # test_encodings = tokenizer(
+    #     test_df["caption"].tolist(),
+    #     padding="max_length",
+    #     truncation=True,
+    #     max_length=max_len,
+    #     return_tensors="pt"
+    # )
 
     # set seed for dataloader shuffling order to make it deterministic
     g = torch.Generator().manual_seed(SEED)
@@ -208,7 +222,7 @@ def run_baseline(config_file="baseline.yaml", project="instagram-posts"):
 
     wandb.init(project=project, config=config_dict, save_code=False, settings=wandb.Settings(console="off"))
     config = wandb.config
-    
+
     mode = "baseline"
 
     _run(config, mode)

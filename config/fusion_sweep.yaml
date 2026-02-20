@@ -1,0 +1,28 @@
+method: bayes
+
+metric:
+  name: best_macro_f1
+  goal: maximize
+
+parameters:
+  model_name:
+    value: "fusion"
+
+  epochs: 
+    value: 50  
+
+  hidden_dim:
+    values: [128, 256, 512]
+
+  learning_rate:
+    min: 0.0005
+    max: 0.001
+    distribution: log_uniform_values
+
+  dropout:
+    min: 0.3
+    max: 0.5
+
+  batch_size:
+    value: 32
+

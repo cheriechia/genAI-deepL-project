@@ -35,6 +35,38 @@ def extract_first_image_path(x):
     else:
         return None
 
+def data_preparation(train_df, test_df):
+    # Keep only the first image
+    train_df["image_path"] = train_df["image_path"].apply(extract_first_image_path)
+    test_df["image_path"] = test_df["image_path"].apply(extract_first_image_path)
+    
+    # Drop rows with no images (if any)
+    train_df = train_df.dropna(subset=["image_path"]).reset_index(drop=True)
+    test_df = test_df.dropna(subset=["image_path"]).reset_index(drop=True)
+
+    # Define image transforms
+    IMAGE_SIZE = 224  # ResNet expects 224x224
+
+    train_transform = transforms.Compose([
+        transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
+        transforms.RandomHorizontalFlip(),   # data augmentation
+        transforms.ToTensor(),
+        transforms.Normalize(
+            mean=[0.485, 0.456, 0.406],        # ImageNet mean
+            std=[0.229, 0.224, 0.225]          # ImageNet std
+        )
+    ])
+
+    test_transform = transforms.Compose([
+        transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
+        transforms.ToTensor(),
+        transforms.Normalize(
+            mean=[0.485, 0.456, 0.406],
+            std=[0.229, 0.224, 0.225]
+        )
+    ])
+
+    return train_transform, test_transform
 
 def _run(config, mode):
     """
@@ -73,55 +105,58 @@ def _run(config, mode):
     except ValueError as e:
         raise ValueError(f"Incorrect config value type: {e}")
 
-    # Keep only the first image
-    train_df["image_path"] = train_df["image_path"].apply(extract_first_image_path)
-    test_df["image_path"] = test_df["image_path"].apply(extract_first_image_path)
+    # # Keep only the first image
+    # train_df["image_path"] = train_df["image_path"].apply(extract_first_image_path)
+    # test_df["image_path"] = test_df["image_path"].apply(extract_first_image_path)
     
-    # Drop rows with no images (if any)
-    train_df = train_df.dropna(subset=["image_path"]).reset_index(drop=True)
-    test_df = test_df.dropna(subset=["image_path"]).reset_index(drop=True)
+    # # Drop rows with no images (if any)
+    # train_df = train_df.dropna(subset=["image_path"]).reset_index(drop=True)
+    # test_df = test_df.dropna(subset=["image_path"]).reset_index(drop=True)
 
-    # # Convert image paths string to list
-    # train_df["image_path"] = train_df["image_path"].apply(
-    #     lambda x: ast.literal_eval(x) if isinstance(x, str) else x
-    # )
-    # test_df["image_path"] = test_df["image_path"].apply(
-    #     lambda x: ast.literal_eval(x) if isinstance(x, str) else x
-    # )
-    # # Keep only the first image (if list exists and is not empty)
-    # train_df["image_path"] = train_df["image_path"].apply(
-    #     lambda x: x[0] if isinstance(x, list) and len(x) > 0 else None
-    # )
+        # # Convert image paths string to list
+        # train_df["image_path"] = train_df["image_path"].apply(
+        #     lambda x: ast.literal_eval(x) if isinstance(x, str) else x
+        # )
+        # test_df["image_path"] = test_df["image_path"].apply(
+        #     lambda x: ast.literal_eval(x) if isinstance(x, str) else x
+        # )
+        # # Keep only the first image (if list exists and is not empty)
+        # train_df["image_path"] = train_df["image_path"].apply(
+        #     lambda x: x[0] if isinstance(x, list) and len(x) > 0 else None
+        # )
 
-    # test_df["image_path"] = test_df["image_path"].apply(
-    #     lambda x: x[0] if isinstance(x, list) and len(x) > 0 else None
-    # )
+        # test_df["image_path"] = test_df["image_path"].apply(
+        #     lambda x: x[0] if isinstance(x, list) and len(x) > 0 else None
+        # )
 
-    # # Explode multiple images in image_path, to each be mapped to the engagement label
-    # train_df = train_df.explode("image_path").reset_index(drop=True)
-    # test_df = test_df.explode("image_path").reset_index(drop=True)
+        # # Explode multiple images in image_path, to each be mapped to the engagement label
+        # train_df = train_df.explode("image_path").reset_index(drop=True)
+        # test_df = test_df.explode("image_path").reset_index(drop=True)
 
-    # Define image transforms
-    IMAGE_SIZE = 224  # ResNet expects 224x224
+    # # Define image transforms
+    # IMAGE_SIZE = 224  # ResNet expects 224x224
 
-    train_transform = transforms.Compose([
-        transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
-        transforms.RandomHorizontalFlip(),   # data augmentation
-        transforms.ToTensor(),
-        transforms.Normalize(
-            mean=[0.485, 0.456, 0.406],        # ImageNet mean
-            std=[0.229, 0.224, 0.225]          # ImageNet std
-        )
-    ])
+    # train_transform = transforms.Compose([
+    #     transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
+    #     transforms.RandomHorizontalFlip(),   # data augmentation
+    #     transforms.ToTensor(),
+    #     transforms.Normalize(
+    #         mean=[0.485, 0.456, 0.406],        # ImageNet mean
+    #         std=[0.229, 0.224, 0.225]          # ImageNet std
+    #     )
+    # ])
 
-    test_transform = transforms.Compose([
-        transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
-        transforms.ToTensor(),
-        transforms.Normalize(
-            mean=[0.485, 0.456, 0.406],
-            std=[0.229, 0.224, 0.225]
-        )
-    ])
+    # test_transform = transforms.Compose([
+    #     transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
+    #     transforms.ToTensor(),
+    #     transforms.Normalize(
+    #         mean=[0.485, 0.456, 0.406],
+    #         std=[0.229, 0.224, 0.225]
+    #     )
+    # ])
+
+    # Data Preparation
+    (train_transform, test_transform) = data_preparation(train_df, test_df)
 
     # set seed for dataloader shuffling order to make it deterministic
     g = torch.Generator().manual_seed(SEED)

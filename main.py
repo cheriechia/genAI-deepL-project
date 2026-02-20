@@ -11,7 +11,8 @@ from src.mlp import run_baseline as run_baseline_mlp
 from src.mlp import run_sweep as run_sweep_mlp
 from src.lstm import run_baseline as run_baseline_lstm
 from src.lstm import run_sweep as run_sweep_lstm
-import multiprocessing
+from src.fusion import run_baseline as run_baseline_fusion
+from src.fusion import run_sweep as run_sweep_fusion
 
 def launch_baseline(model_name, config_file, run_function, project):
     print(f"Running baseline training for model: {model_name}")
@@ -28,13 +29,13 @@ def main():
 
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "--mode", type=str, default="baseline",
+        "--mode", type=str, default="",
         choices=["baseline", "sweep"],
         help="Run a baseline training run or a W&B hyperparameter sweep"
     )
     parser.add_argument(
-        "--model", type=str, default="all",
-        choices=["all", "bert", "mlp", "cnn", "lstm"],
+        "--model", type=str, default="",
+        choices=["fusion", "all", "bert", "mlp", "cnn", "lstm"],
         help="Select which model to train/run"
     )
     parser.add_argument(
@@ -50,6 +51,7 @@ def main():
         ("cnn", "config/cnn_baseline.yaml", run_baseline_cnn),
         ("mlp", "config/mlp_baseline.yaml", run_baseline_mlp),
         ("lstm", "config/lstm_baseline.yaml", run_baseline_lstm),
+        ("fusion", "config/fusion_baseline.yaml", run_baseline_fusion)
     ]
     # Map model names to sweep files and run functions
     sweeps = [
@@ -59,72 +61,41 @@ def main():
         ("cnn", "config/cnn_sweep_unfrozen.yaml", run_sweep_cnn),
         ("mlp", "config/mlp_sweep.yaml", run_sweep_mlp),
         ("lstm", "config/lstm_sweep.yaml", run_sweep_lstm),
+        ("fusion", "config/fusion_sweep.yaml", run_sweep_fusion)
     ]
 
-    # Hyperparameter sweep
-    if args.mode == "sweep": 
-        # if args.model == "all":
-        # Launch each sweep in a separate process
-        processes = []
-        for model_name, sweep_file, run_func in sweeps:
-            if model_name == args.model: # if model name matches
-                # p = multiprocessing.Process(
-                #     target=launch_sweep,
-                #     args=(model_name, sweep_file, run_func, args.project)
-                # )
-                # p.start()
-                # processes.append(p)
-                launch_sweep(model_name, sweep_file, run_func, args.project)
-
-        # Wait for all sweeps to finish
-        # for p in processes:
-        #     p.join()
-
-        # elif args.model == "bert":
-        #     launch_sweep(args.model, "bert_sweep.yaml", run_sweep_bert, args.project)
-        # elif args.model == "cnn":
-        #     launch_sweep(args.model, "cnn_sweep.yaml", run_sweep_cnn, args.project)
-        # elif args.model == "mlp":
-        #     launch_sweep(args.model, "mlp_sweep.yaml", run_sweep_mlp, args.project)
-        # elif args.model == "lstm":
-        #     launch_sweep(args.model, "lstm_sweep.yaml", run_sweep_lstm, args.project)
-        
-    # Single-run training
+    if args.model == "fusion":
+        if args.mode == "sweep":
+            launch_sweep(model_name, sweep_file, run_func, args.project)
+            # run_fusion(args.project)
+        elif args.mode == "baseline":
+            launch_sweep(model_name, sweep_file, run_func, args.project)
     else:
-        print(f"Running single training for model: {args.model}")
-        # if args.model == "all":
-        # Launch each sweep in a separate process
-        processes = []
-        for model_name, baseline_file, run_func in baselines:
-            if model_name == args.model: # if model name matches
-                # p = multiprocessing.Process(
-                #     target=launch_baseline,
-                #     args=(model_name, baseline_file, run_func, args.project)
-                # )
-                # p.start()
-                # processes.append(p)
+        # Hyperparameter sweep
+        if args.mode == "sweep": 
+            # Launch each sweep in a separate process
+            for model_name, sweep_file, run_func in sweeps:
+                if model_name == args.model: # if model name matches
+                    launch_sweep(model_name, sweep_file, run_func, args.project)
+            
+        # Single-run training
+        elif args.mode == "baseline":
+            print(f"Running single training for model: {args.model}")
+            # Launch each sweep in a separate process
+            for model_name, baseline_file, run_func in baselines:
+                if model_name == args.model: # if model name matches
+                    launch_sweep(model_name, sweep_file, run_func, args.project)       
 
-                launch_baseline(model_name, baseline_file, run_func, args.project)
+        else:
+            print("No such mode")
 
-        # Wait for all sweeps to finish
-        # for p in processes:
-        #     p.join()
-        # elif args.model == "bert":
-        #     launch_baseline("bert", "bert_baseline.yaml", run_baseline_bert, project=args.project)
-        # elif args.model == "cnn":
-        #     launch_baseline("cnn", "cnn_baseline.yaml", run_baseline_cnn, project=args.project)
-        # elif args.model == "mlp":
-        #     launch_baseline("mlp", "mlp_baseline.yaml", run_baseline_mlp, project=args.project)
-        # elif args.model == "lstm":
-        #     launch_baseline("lstm", "lstm_baseline.yaml", run_baseline_lstm, project=args.project)
+    print("Finishing W&B run...")
+    wandb.finish()
+    print("Finished.")
 
-        print("Finishing W&B run...")
-        wandb.finish()
-        print("Finished.")
-
-        # Now all runs are done — safe to clean W&B cache
-        os.system("wandb artifact cache cleanup")
-        os.system("wandb gc --yes")
+    # Now all runs are done — safe to clean W&B cache
+    os.system("wandb artifact cache cleanup")
+    os.system("wandb gc --yes")
 
 if __name__ == "__main__":
     main()

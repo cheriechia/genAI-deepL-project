@@ -8,3 +8,6 @@ SEED = 42
 NUM_CLASSES = 3
 HIDDEN_DIM = 256
 PATIENCE = 5
+
+ENTITY = "crqc-nyp"
+PROJECT: "instagram-posts"
