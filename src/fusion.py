@@ -1,10 +1,11 @@
 import wandb
 import torch
+import torch.nn as nn
 import yaml
 import pandas as pd
 
-from src.config import DEVICE, ENTITY, PROJECT, SEED, PATIENCE
-from src.utils import set_seed, compute_weights
+from src.config import DEVICE, ENTITY, PROJECT, PATIENCE
+from src.utils import compute_weights
 from src.bert_model import load_bert, CaptionBERT
 from src.mlp_model import MetadataMLP
 from src.cnn_model import ImageResNet
@@ -15,15 +16,6 @@ from src.save_best import save_best_model
 from src.fusion_model import FusionModel
 from torch.utils.data import TensorDataset, DataLoader
 
-from src.bert import data_preparation as data_prep_bert
-from src.mlp import data_preparation as data_prep_mlp
-from src.cnn import data_preparation as data_prep_cnn
-
-from src.bert_dataset import create_dataloaders as dataloader_bert
-from src.mlp_dataset import create_dataloaders as dataloader_mlp
-from src.cnn_dataset import create_dataloaders as dataloader_cnn
-
-from src.fusion_dataset import create_dataloaders as dataloader_fusion
 
 def get_run_by_id(entity=ENTITY, project=PROJECT, run_id=None):
     api = wandb.Api()
@@ -34,7 +26,7 @@ def load_best_bert(run):
     config = run.config
 
     # Load BERT model and tokenizer
-    bert_model, tokenizer = load_bert(model_name=config["model_name"],
+    bert_model, tokenizer = load_bert(model_name='bert-base-uncased',
                                     max_seq_length=config["max_len"])
     model = CaptionBERT(
         bert_model,
@@ -42,7 +34,7 @@ def load_best_bert(run):
         hidden_dim=config["hidden_dim"]
     ).to(DEVICE)
 
-    state_dict = torch.load("best_model_bert.pt")
+    state_dict = torch.load("models/best_model_bert.pt")
     model.load_state_dict(state_dict)
     for param in model.parameters():
         param.requires_grad = False
@@ -51,17 +43,34 @@ def load_best_bert(run):
 
     return model, tokenizer, config
 
-def load_best_mlp(run):
+def load_best_mlp(run, input_dim=None):
     config = run.config
 
     model = MetadataMLP(
-        input_dim=config["input_dim"],
+        input_dim=input_dim,
         hidden_dim1=config["hidden_dim1"], 
         hidden_dim2=config["hidden_dim2"],
         dropout=config["dropout"]
     ).to(DEVICE)
 
-    state_dict = torch.load("best_model_mlp.pt")
+    state_dict = torch.load("models/best_model_mlp.pt")
+    # missing, unexpected = model.load_state_dict(state_dict) #, strict=False)  # skip mismatched classifier keys
+    # print("Missing keys:", missing)
+    # print("Unexpected keys:", unexpected)
+    # Temp remapping of keys
+    # new_state_dict = {}
+    # mapping = {
+    #     "net.0": "fc1",
+    #     "net.3": "fc2",
+    #     "net.5": "fc_out"
+    # }
+    # for k, v in state_dict.items():
+    #     for old, new in mapping.items():
+    #         if k.startswith(old):
+    #             k = k.replace(old, new)
+    #     new_state_dict[k] = v
+    # model.load_state_dict(new_state_dict)
+    # End of temp remapping of keys
     model.load_state_dict(state_dict)
     for param in model.parameters():
         param.requires_grad = False
@@ -73,18 +82,35 @@ def load_best_mlp(run):
 def load_best_cnn(run):
     config = run.config
 
-    resnet = models.resnet18(weights="IMAGENET1K_V1")
+    # Load pretrained ResNet backbone
+    resnet = models.resnet18(weights=models.ResNet18_Weights.IMAGENET1K_V1)
+    # Save number of features before removing fc
+    num_features = resnet.fc.in_features
+
+    # Replace fc with identity so backbone outputs features
+    resnet.fc = nn.Identity()
+    # cnn_model = ImageResNet(resnet_model=resnet_model)
+    # state_dict = torch.load(checkpoint_path)
+    # cnn_model.load_state_dict(state_dict, strict=False)  # skip mismatched classifier keys
+    # cnn_model.eval()
+
+    # Initialize ImageResNet with backbone
+    # resnet = models.resnet18(weights="IMAGENET1K_V1")
     model = ImageResNet(
-        resnet,
+        resnet_model=resnet,
+        num_features=num_features,
         dropout=config["dropout"]
     ).to(DEVICE)
 
-    state_dict = torch.load("best_model_cnn.pt")
-    model.load_state_dict(state_dict)
+    # Load saved model checkpoint, skipping classifier mismatch
+    state_dict = torch.load("models/best_model_cnn.pt")
+    missing, unexpected = model.load_state_dict(state_dict, strict=False)  # skip mismatched classifier keys
+    print("Missing keys:", missing)
+    print("Unexpected keys:", unexpected)
     for param in model.parameters():
         param.requires_grad = False
 
-    model.eval()
+    model.eval()  # important if using for feature extraction
 
     return model, config
 
@@ -92,179 +118,6 @@ def _run(config, mode):
     """
     Core training function that both sweep and baseline call.
     """
-    # # Load best models
-    # with open("config/fusion_selected_runs.yaml", "r") as f:
-    #     run_ids = yaml.safe_load(f)
-    
-    # best_bert_run = get_run_by_id(run_id=run_ids["bert"])
-    # best_cnn_run = get_run_by_id(run_id=run_ids["cnn"])
-    # best_mlp_run = get_run_by_id(run_id=run_ids["mlp"])
-
-    # bert_model, tokenizer, bert_config = load_best_bert(best_bert_run)
-    # cnn_model, cnn_config = load_best_cnn(best_cnn_run)
-    # mlp_model, mlp_config = load_best_mlp(best_mlp_run)
-
-    # -------------------------
-    # Start of data preparation
-    # -------------------------
-    # set_seed(SEED)
-
-    # # Load split data
-    # train_df = pd.read_csv("data/train_df.csv",
-    #                        parse_dates=["publish_timestamp"])
-    # test_df = pd.read_csv("data/test_df.csv",
-    #                       parse_dates=["publish_timestamp"])
-    
-    # Set labels
-    # y_train = train_df["engagement_label"].values
-    # y_test = test_df["engagement_label"].values
-    
-    # # (For BERT) Fill missing captions with ""
-    # train_encodings, test_encodings = data_prep_bert(train_df, test_df, tokenizer, bert_config["max_len"])
-
-    # # (For MLP) Define columns to be used in metadata model
-    # X_train_proc, X_test_proc = data_prep_mlp(train_df, test_df)
-
-    # # (For CNN) Keep only the first image
-    # train_transform, test_transform = data_prep_cnn(train_df, test_df)
-
-    # # set seed for dataloader shuffling order to make it deterministic
-    # g = torch.Generator().manual_seed(SEED)
-
-    # # (For BERT) DataLoader
-    # bert_train_loader, bert_test_loader = dataloader_bert(
-    #     train_encodings,
-    #     test_encodings,
-    #     y_train,
-    #     y_test,
-    #     bert_config["batch_size"],
-    #     g,
-    #     shuffle_train = False   # don't mix training labels
-    # )
-
-    # # (For MLP) DataLoader
-    # mlp_train_loader, mlp_test_loader = dataloader_mlp(
-    #     X_train_proc,
-    #     X_test_proc,
-    #     y_train,
-    #     y_test,
-    #     mlp_config["batch_size"],
-    #     g,
-    #     shuffle_train = False   # don't mix training labels
-    # )
-
-    # # (For CNN) DataLoader
-    # cnn_train_loader, cnn_test_loader = dataloader_cnn(
-    #     train_df,
-    #     test_df,
-    #     train_transform,
-    #     test_transform,
-    #     cnn_config["batch_size"],
-    #     g,
-    #     shuffle_train = False   # don't mix training labels
-    # )
-
-    # Create tensors for labels
-    y_train_tensor = torch.tensor(y_train, dtype=torch.long)
-    y_test_tensor  = torch.tensor(y_test, dtype=torch.long)
-
-    # -----------------
-    # Merge into single tensor
-    # -----------------
-    # train_dataset = FusionFeatureDataset(
-    #     bert_train_loader,
-    #     cnn_train_loader,
-    #     mlp_train_loader,
-    #     bert_model,
-    #     cnn_model,
-    #     mlp_model,
-    #     DEVICE
-    # )
-
-    # test_dataset = FusionFeatureDataset(
-    #     bert_test_loader,
-    #     cnn_test_loader,
-    #     mlp_test_loader,
-    #     bert_model,
-    #     cnn_model,
-    #     mlp_model,
-    #     DEVICE
-    # )
-
-    # # Put models in eval mode
-    # bert_model.eval()
-    # cnn_model.eval()
-    # mlp_model.eval()
-
-    # all_features_train = []
-    # all_features_test = []
-
-    # with torch.no_grad():
-    #     # ------ TRAIN ---------
-    #     for bert_batch, cnn_batch, mlp_batch in zip(bert_train_loader, cnn_train_loader, mlp_train_loader):
-
-    #         # BERT features
-    #         input_ids = bert_batch["input_ids"].to(DEVICE)
-    #         attention_mask = bert_batch["attention_mask"].to(DEVICE)
-
-    #         bert_feat = bert_model(
-    #             input_ids=input_ids,
-    #             attention_mask=attention_mask,
-    #             return_features=True
-    #         )
-
-    #         # CNN features
-    #         images, _ = cnn_batch          # (X, y)
-    #         images = images.to(DEVICE)
-
-    #         cnn_feat = cnn_model(images, return_features=True)
-
-    #         # MLP features
-    #         metadata, _ = mlp_batch        # (X, y)
-    #         metadata = metadata.to(DEVICE)
-
-    #         mlp_feat = mlp_model(metadata, return_features=True)
-
-    #         # Concatenate along feature dim
-    #         fusion_feat = torch.cat([bert_feat, cnn_feat, mlp_feat], dim=1)  # (B, total_feat_dim)
-
-    #         all_features_train.append(fusion_feat.cpu())
-
-    #     # ------ TEST ---------
-    #     for bert_batch, cnn_batch, mlp_batch in zip(bert_test_loader, cnn_test_loader, mlp_test_loader):
-    #         # BERT features
-    #         input_ids = bert_batch["input_ids"].to(DEVICE)
-    #         attention_mask = bert_batch["attention_mask"].to(DEVICE)
-
-    #         bert_feat = bert_model(
-    #             input_ids=input_ids,
-    #             attention_mask=attention_mask,
-    #             return_features=True
-    #         )
-
-    #         # CNN features
-    #         images, _ = cnn_batch
-    #         images = images.to(DEVICE)
-
-    #         cnn_feat = cnn_model(images, return_features=True)
-
-    #         # MLP features
-    #         metadata, _ = mlp_batch
-    #         metadata = metadata.to(DEVICE)
-
-    #         mlp_feat = mlp_model(metadata, return_features=True)
-
-    #         # Concatenate
-    #         fusion_feat = torch.cat([bert_feat, cnn_feat, mlp_feat], dim=1)
-
-    #         all_features_test.append(fusion_feat.cpu())
-
-    # # Stack batches into single tensors
-    # X_train_fusion = torch.cat(all_features_train, dim=0)
-    # X_test_fusion = torch.cat(all_features_test, dim=0)
-    # # Use tensor labels
-    # y_train_fusion = y_train_tensor
-    # y_test_fusion  = y_test_tensor
 
     # ----------------------------
     # Prepare Fusion Model
@@ -296,40 +149,13 @@ def _run(config, mode):
 
     input_dim = X_train.shape[1]
 
-    # DataLoader and dataset
-    # train_loader_fusion, test_loader_fusion = dataloader_fusion(
-    #     X_train_fusion,
-    #     X_test_fusion,
-    #     y_train_fusion,
-    #     y_test_fusion,
-    #     batch_size,
-    #     g,
-    #     shuffle_train=True      # Mix training labels (default)
-    # )
-    # train_loader_fusion, test_loader_fusion = dataloader_fusion(
-    #     bert_train_loader,
-    #     cnn_train_loader,
-    #     mlp_train_loader,
-    #     bert_test_loader,
-    #     cnn_test_loader,
-    #     mlp_test_loader,
-    #     bert_model,
-    #     cnn_model,
-    #     mlp_model,
-    #     batch_size,
-    #     g,
-    #     shuffle_train=True      # Mix training labels (default)
-    # )
-
     # Initialize fusion model
-    # Example: input_dim = sum of all feature dims
-    input_dim = train_loader_fusion.features.shape[1]
     fusion_model = FusionModel(input_dim=input_dim,
                             hidden_dim=hidden_dim,
                             dropout=dropout).to(DEVICE)
     
     # Weights for class imbalance
-    class_weights = compute_weights(y_train_tensor.cpu().numpy(), DEVICE)
+    class_weights = compute_weights(y_train.cpu().numpy(), DEVICE)
 
     # Loss & optimizer
     criterion = torch.nn.CrossEntropyLoss(weight=class_weights)
@@ -338,8 +164,8 @@ def _run(config, mode):
     # Train
     best_f1, best_state_dict = train_model(
         fusion_model,
-        train_loader_fusion,
-        test_loader_fusion,
+        train_loader,
+        test_loader,
         optimizer,
         criterion,
         DEVICE,
@@ -347,86 +173,14 @@ def _run(config, mode):
         patience=PATIENCE
     )
 
+
     # Load best weights
     fusion_model.load_state_dict(best_state_dict)
 
     # Save only ONCE here (best model of single run in sweep)
     save_best_model(fusion_model, model_name, mode, best_f1)
 
-    # # ???????
-    # fusion_input_dim = (
-    #     bert_config["hidden_dim"] +
-    #     512 + # resnet18 output
-    #     mlp_config["hidden_dim2"]
-    # )
-
-    # # fusion model
-    # fusion_model = FusionModel(
-    #     input_dim=fusion_input_dim,
-    #     num_classes=3
-    # ).to(DEVICE)
-
-    # # optimizer
-    #     optimizer = torch.optim.AdamW(
-    #     fusion_model.parameters(),
-    #     lr=1e-3
-    # )
-
-    # # fusion training loop
-    # criterion = torch.nn.CrossEntropyLoss()
-
-    # for epoch in range(num_epochs):
-
-    #     fusion_model.train()
-
-    #     for batch in train_loader:
-
-    #         input_ids = batch["input_ids"].to(DEVICE)
-    #         attention_mask = batch["attention_mask"].to(DEVICE)
-    #         images = batch["image"].to(DEVICE)
-    #         metadata = batch["metadata"].to(DEVICE)
-    #         labels = batch["label"].to(DEVICE)
-
-    #         with torch.no_grad():  # freeze experts
-    #             bert_feat = bert_model(
-    #                 input_ids,
-    #                 attention_mask,
-    #                 return_features=True
-    #             )
-
-    #             cnn_feat = cnn_model(
-    #                 images,
-    #                 return_features=True
-    #             )
-
-    #             mlp_feat = mlp_model(
-    #                 metadata,
-    #                 return_features=True
-    #             )
-
-    #         logits = fusion_model(
-    #             bert_feat,
-    #             cnn_feat,
-    #             mlp_feat
-    #         )
-
-    #         loss = criterion(logits, labels)
-
-    #         optimizer.zero_grad()
-    #         loss.backward()
-    #         optimizer.step()
-
-    # fusion_model.eval()
-
-    # # inference
-    # with torch.no_grad():
-    #     bert_feat = bert_model(..., return_features=True)
-    #     cnn_feat = cnn_model(..., return_features=True)
-    #     mlp_feat = mlp_model(..., return_features=True)
-
-    #     logits = fusion_model(bert_feat, cnn_feat, mlp_feat)
-    #     preds = torch.argmax(logits, dim=1)
-
+    
 # ----------------------------
 # Functions exposed to main.py
 # ----------------------------

@@ -30,7 +30,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--mode", type=str, default="",
-        choices=["baseline", "sweep"],
+        choices=["baseline", "sweep", "precompute"],
         help="Run a baseline training run or a W&B hyperparameter sweep"
     )
     parser.add_argument(
@@ -64,38 +64,36 @@ def main():
         ("fusion", "config/fusion_sweep.yaml", run_sweep_fusion)
     ]
 
-    if args.model == "fusion":
-        if args.mode == "sweep":
-            launch_sweep(model_name, sweep_file, run_func, args.project)
-            # run_fusion(args.project)
-        elif args.mode == "baseline":
-            launch_sweep(model_name, sweep_file, run_func, args.project)
-    else:
-        # Hyperparameter sweep
-        if args.mode == "sweep": 
-            # Launch each sweep in a separate process
-            for model_name, sweep_file, run_func in sweeps:
-                if model_name == args.model: # if model name matches
-                    launch_sweep(model_name, sweep_file, run_func, args.project)
-            
-        # Single-run training
-        elif args.mode == "baseline":
-            print(f"Running single training for model: {args.model}")
-            # Launch each sweep in a separate process
-            for model_name, baseline_file, run_func in baselines:
-                if model_name == args.model: # if model name matches
-                    launch_sweep(model_name, sweep_file, run_func, args.project)       
+    # Hyperparameter sweep
+    if args.mode == "sweep": 
+        # Launch each sweep in a separate process
+        for model_name, sweep_file, run_func in sweeps:
+            if model_name == args.model: # if model name matches
+                launch_sweep(model_name, sweep_file, run_func, args.project)
+        
+    # Single-run training
+    elif args.mode == "baseline":
+        print(f"Running single training for model: {args.model}")
+        # Launch each sweep in a separate process
+        for model_name, baseline_file, run_func in baselines:
+            if model_name == args.model: # if model name matches
+                launch_baseline(model_name, baseline_file, run_func, args.project)   
 
-        else:
-            print("No such mode")
+    elif args.mode == "precompute":
+        from src.precompute_fusion_features import extract_features
+        print("Running fusion feature precomputation...")
+        extract_features()
+        return
+
+    else:
+        print("No such mode")
 
     print("Finishing W&B run...")
     wandb.finish()
     print("Finished.")
 
     # Now all runs are done — safe to clean W&B cache
-    os.system("wandb artifact cache cleanup")
-    os.system("wandb gc --yes")
+    os.system("wandb artifact cache cleanup 1024")
 
 if __name__ == "__main__":
     main()

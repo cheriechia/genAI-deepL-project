@@ -5,14 +5,9 @@ import yaml
 import pandas as pd
 from tqdm import tqdm
 
-from config import DEVICE, SEED
-from utils import set_seed
-from src.fusion import (
-    get_run_by_id,
-    load_best_bert,
-    load_best_cnn,
-    load_best_mlp
-)
+from src.config import DEVICE, SEED
+from src.utils import set_seed
+from src.fusion import get_run_by_id, load_best_bert, load_best_cnn, load_best_mlp
 
 from src.bert import data_preparation as data_prep_bert
 from src.mlp import data_preparation as data_prep_mlp
@@ -30,24 +25,6 @@ def extract_features():
     set_seed(SEED)
 
     # -------------------------
-    # Load selected run IDs
-    # -------------------------
-    with open("config/fusion_selected_runs.yaml", "r") as f:
-        run_ids = yaml.safe_load(f)
-
-    best_bert_run = get_run_by_id(run_ids["bert"])
-    best_cnn_run  = get_run_by_id(run_ids["cnn"])
-    best_mlp_run  = get_run_by_id(run_ids["mlp"])
-
-    bert_model, tokenizer, bert_config = load_best_bert(best_bert_run)
-    cnn_model, cnn_config = load_best_cnn(best_cnn_run)
-    mlp_model, mlp_config = load_best_mlp(best_mlp_run)
-
-    bert_model.eval()
-    cnn_model.eval()
-    mlp_model.eval()
-
-    # -------------------------
     # Load dataset
     # -------------------------
     train_df = pd.read_csv("data/train_df.csv", parse_dates=["publish_timestamp"])
@@ -61,6 +38,13 @@ def extract_features():
     # -------------------------
 
     # BERT
+    with open("config/fusion_selected_runs.yaml", "r") as f:
+        run_ids = yaml.safe_load(f)
+
+    best_bert_run = get_run_by_id(run_id=run_ids["bert"])
+    bert_model, tokenizer, bert_config = load_best_bert(best_bert_run)
+    bert_model.eval()
+
     train_encodings, test_encodings = data_prep_bert(
         train_df,
         test_df,
@@ -70,9 +54,33 @@ def extract_features():
 
     # MLP
     X_train_proc, X_test_proc = data_prep_mlp(train_df, test_df)
+    best_mlp_run  = get_run_by_id(run_id=run_ids["mlp"])
+    mlp_model, mlp_config = load_best_mlp(best_mlp_run, input_dim=X_train_proc.shape[1]) # Input size matching one-hot expanded features
+    mlp_model.eval()
 
     # CNN
     train_transform, test_transform = data_prep_cnn(train_df, test_df)
+    best_cnn_run  = get_run_by_id(run_id=run_ids["cnn"])
+    cnn_model, cnn_config = load_best_cnn(best_cnn_run)
+    cnn_model.eval()
+
+    # -------------------------
+    # Load selected run IDs
+    # -------------------------
+    # with open("config/fusion_selected_runs.yaml", "r") as f:
+    #     run_ids = yaml.safe_load(f)
+
+    # # best_bert_run = get_run_by_id(run_id=run_ids["bert"])
+    # best_cnn_run  = get_run_by_id(run_id=run_ids["cnn"])
+    # best_mlp_run  = get_run_by_id(run_id=run_ids["mlp"])
+
+    # # bert_model, tokenizer, bert_config = load_best_bert(best_bert_run)
+    # cnn_model, cnn_config = load_best_cnn(best_cnn_run)
+    # mlp_model, mlp_config = load_best_mlp(best_mlp_run, input_dim=X_train_proc.shape[1]) # Input size matching one-hot expanded features
+
+    # # bert_model.eval()
+    # cnn_model.eval()
+    # mlp_model.eval()
 
     # set seed for dataloader shuffling order to make it deterministic
     g = torch.Generator().manual_seed(SEED)

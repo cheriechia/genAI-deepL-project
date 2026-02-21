@@ -4,13 +4,16 @@ import torch.nn as nn
 import torchvision.models as models
 import torch.nn.functional as F
 
-resnet = models.resnet18(weights="IMAGENET1K_V1")
+# resnet = models.resnet18(weights="IMAGENET1K_V1")
+resnet = models.resnet18(
+        weights=models.ResNet18_Weights.IMAGENET1K_V1
+    )
 class ImageResNet(nn.Module):
-    def __init__(self, resnet_model, num_classes=3, dropout=0.5):
+    def __init__(self, resnet_model, num_features=512, num_classes=3, dropout=0.5):
         super().__init__()
-        self.resnet = resnet_model
-        num_features = self.resnet.fc.in_features
-        resnet_model.fc = nn.Identity()  # remove original fc
+        # self.resnet = resnet_model
+        # num_features = self.resnet.fc.in_features
+        # resnet_model.fc = nn.Identity()  # remove original fc
         self.backbone = resnet_model   # backbone outputs 512-dim features
 
         # Replace the final fc layer (classifier head after backbone)

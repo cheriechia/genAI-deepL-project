@@ -10,4 +10,4 @@ HIDDEN_DIM = 256
 PATIENCE = 5
 
 ENTITY = "crqc-nyp"
-PROJECT: "instagram-posts"
+PROJECT= "instagram-posts"

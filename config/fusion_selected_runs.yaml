@@ -1,3 +1,9 @@
-mlp: l0i1cwmq
-bert: xldv9mrf
-cnn: x83f0s78
+# Sweep 1
+# mlp: l0i1cwmq
+# bert: xldv9mrf
+# cnn: x83f0s78
+
+# sweep 2
+mlp: c9rjf077
+bert: 2ryf9waj
+cnn: n8fu13jz

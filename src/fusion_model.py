@@ -11,7 +11,6 @@ class FusionModel(torch.nn.Module):
             torch.nn.Linear(hidden_dim, num_classes)
         )
 
-    def forward(self, bert_feat, cnn_feat, mlp_feat):
-        x = torch.cat([bert_feat, cnn_feat, mlp_feat], dim=1)
+    def forward(self, x):
         return self.classifier(x)
 

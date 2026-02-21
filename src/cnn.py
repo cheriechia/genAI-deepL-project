@@ -2,6 +2,7 @@
 
 import wandb
 import torch
+import torch.nn as nn
 import pandas as pd
 import yaml
 import ast
@@ -156,7 +157,7 @@ def _run(config, mode):
     # ])
 
     # Data Preparation
-    (train_transform, test_transform) = data_preparation(train_df, test_df)
+    train_transform, test_transform = data_preparation(train_df, test_df)
 
     # set seed for dataloader shuffling order to make it deterministic
     g = torch.Generator().manual_seed(SEED)
@@ -172,41 +173,74 @@ def _run(config, mode):
     )
 
     # Set parameters for model and optimizer
-    resnet = models.resnet18(weights="IMAGENET1K_V1")
+    # resnet = models.resnet18(weights="IMAGENET1K_V1")
+    # Load pretrained ResNet backbone
+    resnet = models.resnet18(weights=models.ResNet18_Weights.IMAGENET1K_V1)
+    # Save number of features before removing fc
+    num_features = resnet.fc.in_features
+    # Replace fc with identity so backbone outputs features
+    resnet.fc = nn.Identity()
     model = ImageResNet(
-        resnet,
+        resnet_model=resnet,
+        num_features=num_features,
         dropout=dropout
     ).to(DEVICE)
 
     if freeze_resnet:
-        # Freeze backbone
-        for name, param in model.resnet.named_parameters():
-            if "fc" not in name:   # do not freeze fc
-                param.requires_grad = False
+        # Freeze entire backbone
+        for param in model.backbone.parameters():
+            param.requires_grad = False
 
-        # New fc layers are trainable by default
-        for param in model.resnet.fc.parameters():
+        # Ensure classifier is trainable
+        for param in model.classifier.parameters():
             param.requires_grad = True
 
-        # Optimizer
+        # Optimizer: only classifier
         optimizer = torch.optim.Adam(
-            model.resnet.fc.parameters(),  # only train classifier head
+            model.classifier.parameters(),
             lr=lr_head
         )
+        # # Freeze backbone
+        # for name, param in model.backbone.named_parameters():
+        #     # if "fc" not in name:   # do not freeze fc
+        #     param.requires_grad = False
+
+        # # New fc layers are trainable by default
+        # for param in model.resnet.fc.parameters():
+        #     param.requires_grad = True
+
+        # # Optimizer
+        # optimizer = torch.optim.Adam(
+        #     model.resnet.fc.parameters(),  # only train classifier head
+        #     lr=lr_head
+        # )
 
     else:
-        for param in model.resnet.parameters(): # freeze everything first
-            param.requires_grad = False 
-        for param in model.resnet.layer4.parameters(): # Unfreeze last layer4 block
+         
+        for param in model.backbone.parameters(): # Freeze everything first
+            param.requires_grad = False
+        for param in model.backbone.layer4.parameters(): # Unfreeze last ResNet block
             param.requires_grad = True
-        for param in model.resnet.fc.parameters(): # Keep fc head trainable
+        for param in model.classifier.parameters(): # Keep classifier trainable
             param.requires_grad = True
 
-        # Set optimizer from partially unfrozen ResNet
+        # Optimizer with different learning rates
         optimizer = torch.optim.Adam([
-            {"params": model.resnet.layer4.parameters(), "lr": lr_backbone},
-            {"params": model.resnet.fc.parameters(), "lr": lr_head},
+            {"params": model.backbone.layer4.parameters(), "lr": lr_backbone},
+            {"params": model.classifier.parameters(), "lr": lr_head},
         ])
+        # for param in model.resnet.parameters(): # freeze everything first
+        #     param.requires_grad = False 
+        # for param in model.resnet.layer4.parameters(): # Unfreeze last layer4 block
+        #     param.requires_grad = True
+        # for param in model.resnet.fc.parameters(): # Keep fc head trainable
+        #     param.requires_grad = True
+
+        # # Set optimizer from partially unfrozen ResNet
+        # optimizer = torch.optim.Adam([
+        #     {"params": model.resnet.layer4.parameters(), "lr": lr_backbone},
+        #     {"params": model.resnet.fc.parameters(), "lr": lr_head},
+        # ])
 
     # Weights for class imbalance
     class_weights = compute_weights(y_train, DEVICE)
