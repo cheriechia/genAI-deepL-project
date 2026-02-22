@@ -4,6 +4,7 @@ import wandb
 import torch
 import pandas as pd
 import yaml
+import joblib
 
 from src.config import DEVICE, SEED, PATIENCE
 from src.utils import set_seed, compute_weights
@@ -42,6 +43,10 @@ def data_preparation(train_df, test_df):
     # apply preprocessing
     X_train_proc = preprocessor.fit_transform(X_train)
     X_test_proc  = preprocessor.transform(X_test)
+
+    # save preprocessor
+    joblib.dump(preprocessor, "models/preprocessor_mlp.pkl")
+
 
     # # Get new column names from ColumnTransformer
     # num_features = numeric_cols
