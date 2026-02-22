@@ -2,7 +2,7 @@
 
 import torch.nn as nn
 import torchvision.models as models
-import torch.nn.functional as F
+
 
 # resnet = models.resnet18(weights="IMAGENET1K_V1")
 resnet = models.resnet18(

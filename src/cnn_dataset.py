@@ -4,7 +4,6 @@ import torch
 from torch.utils.data import Dataset
 from torch.utils.data import DataLoader
 from PIL import Image
-from torchvision import transforms
 
 class ImageDataset(Dataset):
     def __init__(self, df, img_col="image_path", target_col="engagement_label", transform=None):
