@@ -53,10 +53,10 @@ def load_best_mlp(run, input_dim=None):
         dropout=config["dropout"]
     ).to(DEVICE)
 
-    state_dict = torch.load("models/best_model_mlp.pt")
+    missing, unexpected = state_dict = torch.load("models/best_model_mlp.pt")
     # missing, unexpected = model.load_state_dict(state_dict) #, strict=False)  # skip mismatched classifier keys
-    # print("Missing keys:", missing)
-    # print("Unexpected keys:", unexpected)
+    print("Missing MLP keys:", missing)
+    print("Unexpected MLP keys:", unexpected)
     # Temp remapping of keys
     # new_state_dict = {}
     # mapping = {
@@ -88,7 +88,7 @@ def load_best_cnn(run):
     num_features = resnet.fc.in_features
 
     # Replace fc with identity so backbone outputs features
-    resnet.fc = nn.Identity()
+    resnet.fc = nn.Identity() # to be removed in ImageResNet function
     # cnn_model = ImageResNet(resnet_model=resnet_model)
     # state_dict = torch.load(checkpoint_path)
     # cnn_model.load_state_dict(state_dict, strict=False)  # skip mismatched classifier keys
@@ -104,9 +104,9 @@ def load_best_cnn(run):
 
     # Load saved model checkpoint, skipping classifier mismatch
     state_dict = torch.load("models/best_model_cnn.pt")
-    missing, unexpected = model.load_state_dict(state_dict, strict=False)  # skip mismatched classifier keys
-    print("Missing keys:", missing)
-    print("Unexpected keys:", unexpected)
+    missing, unexpected = model.load_state_dict(state_dict)  # skip mismatched classifier keys
+    print("Missing CNN keys:", missing)
+    print("Unexpected CNN keys:", unexpected)
     for param in model.parameters():
         param.requires_grad = False
 

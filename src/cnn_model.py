@@ -13,7 +13,7 @@ class ImageResNet(nn.Module):
         super().__init__()
         # self.resnet = resnet_model
         # num_features = self.resnet.fc.in_features
-        # resnet_model.fc = nn.Identity()  # remove original fc
+        resnet_model.fc = nn.Identity()  # remove original fc
         self.backbone = resnet_model   # backbone outputs 512-dim features
 
         # Replace the final fc layer (classifier head after backbone)

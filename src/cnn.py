@@ -177,9 +177,9 @@ def _run(config, mode):
     # Load pretrained ResNet backbone
     resnet = models.resnet18(weights=models.ResNet18_Weights.IMAGENET1K_V1)
     # Save number of features before removing fc
-    num_features = resnet.fc.in_features
-    # Replace fc with identity so backbone outputs features
-    resnet.fc = nn.Identity()
+    num_features = resnet.fc.in_features # 512
+    # # Replace fc with identity so backbone outputs features
+    resnet.fc = nn.Identity() # to be removed in ImageResNet function
     model = ImageResNet(
         resnet_model=resnet,
         num_features=num_features,
