@@ -167,7 +167,7 @@ freeze | - | - | true | false | true | false
 * At 59% to 63% for macro-F1, each model was better than the random-guess performance of 33% (for 3 classes), showing that each model performs boderline moderately, with BERT and captions being slightly more useful for predicting engagement labels
 * At 68% macro-F1 for the fusion model, this shows that the combination of features does help with engagement label prediction. The fusion model performs decently but is not the best.
 
-<img src="charts/test_CM_W&B Chart 23_02_2026, 21_48_42.png" width="80%" />
+<img src="charts/test_CM_W&B Chart 23_02_2026, 21_48_42.jpg" width="80%" />
 
 * The confusion matrix shows that many samples with Medium/Moderate engagement were predicted as Low, and vice versa. 
 * The Medium/Moderate engagement label also has the fewest correct predictions.
