@@ -144,13 +144,17 @@ freeze | - | - | true | false | true | false
 
 ## Evaluation of the models developed
 ### LSTM VS Frozen BERT VS Unfrozen BERT
-![testF1_bert_vs_mlp](<charts/testF1_W&B Chart 23_02_2026, 18_55_04.png>)   ![trainF1_bert_vs_mlp](<charts/trainF1_W&B Chart 23_02_2026, 18_56_02.png>)
+<img src="charts/testF1_W&B Chart 23_02_2026, 18_55_04.png" width="48%" />
+<img src="charts/trainF1_W&B Chart 23_02_2026, 18_56_02.png" width="48%" />
+   <!-- ![trainF1_bert_vs_mlp](<charts/trainF1_W&B Chart 23_02_2026, 18_56_02.png>) -->
 * After conducting sweeps, LSTM showed more overfitting than frozen BERT, and with poorer performance. Hence BERT was chosen as the final model for captions.
 * frozen and unfrozen BERT have similar test macro F1, but unfrozen BERT has higher train macroF1 of 69%, while frozen BERT has lower train macroF1 of 60%. This shows that unfrozen BERT was overfitting, while frozen BERT was doing similarly during inference, or slightly underperforming
 * Frozen BERT is the final model for captions, with best macro-F1 score of 63%
 
 ### Frozen CNN vs Unfrozen CNN
-![testF1_cnn](<charts/testF1_W&B Chart 23_02_2026, 19_23_17.png>)   ![trainF1_cnn](<charts/trainF1_W&B Chart 23_02_2026, 19_23_48.png>)
+<img src="charts/testF1_W&B Chart 23_02_2026, 19_23_17.png" width="48%" />
+<img src="charts/trainF1_W&B Chart 23_02_2026, 19_23_48.png" width="48%" />
+<!-- ![testF1_cnn](<charts/testF1_W&B Chart 23_02_2026, 19_23_17.png>)   ![trainF1_cnn](<charts/trainF1_W&B Chart 23_02_2026, 19_23_48.png>) -->
 * In both test and train, the unfrozen ResNet18 performed better
 * There was little to no overfitting on ResNet18, whether frozen or not
 * Frozen ResNet18 is the final model for images, with best macro-F1 score of 59.8%
@@ -158,6 +162,8 @@ freeze | - | - | true | false | true | false
 ### Best BERT, MLP and CNN performance
 * The best MLP has macro-F1 score of 59%
 * The overall Fusion Model has best macro-F1 score of 68.6%
+<img src="charts/testF1_W&B Chart 23_02_2026, 19_26_10.png" width="48%" />
+<img src="charts/trainF1_W&B Chart 23_02_2026, 19_26_31.png" width="48%" />
 ![testF1_all](<charts/testF1_W&B Chart 23_02_2026, 19_26_10.png>)   ![trainF1_all](<charts/trainF1_W&B Chart 23_02_2026, 19_26_31.png>) 
 * Slight overfitting in fusion model is observed from the drop in macro-F1 from train to test
 * The fusion model did help to improve the macro-F1 score, but the final performance is still only moderate.
