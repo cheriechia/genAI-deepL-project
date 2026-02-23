@@ -54,23 +54,8 @@ def load_best_mlp(run, input_dim=None):
     ).to(DEVICE)
 
     missing, unexpected = state_dict = torch.load("models/best_model_mlp.pt")
-    # missing, unexpected = model.load_state_dict(state_dict) #, strict=False)  # skip mismatched classifier keys
     print("Missing MLP keys:", missing)
     print("Unexpected MLP keys:", unexpected)
-    # Temp remapping of keys
-    # new_state_dict = {}
-    # mapping = {
-    #     "net.0": "fc1",
-    #     "net.3": "fc2",
-    #     "net.5": "fc_out"
-    # }
-    # for k, v in state_dict.items():
-    #     for old, new in mapping.items():
-    #         if k.startswith(old):
-    #             k = k.replace(old, new)
-    #     new_state_dict[k] = v
-    # model.load_state_dict(new_state_dict)
-    # End of temp remapping of keys
     model.load_state_dict(state_dict)
     for param in model.parameters():
         param.requires_grad = False
@@ -89,13 +74,8 @@ def load_best_cnn(run):
 
     # Replace fc with identity so backbone outputs features
     resnet.fc = nn.Identity() # to be removed in ImageResNet function
-    # cnn_model = ImageResNet(resnet_model=resnet_model)
-    # state_dict = torch.load(checkpoint_path)
-    # cnn_model.load_state_dict(state_dict, strict=False)  # skip mismatched classifier keys
-    # cnn_model.eval()
 
     # Initialize ImageResNet with backbone
-    # resnet = models.resnet18(weights="IMAGENET1K_V1")
     model = ImageResNet(
         resnet_model=resnet,
         num_features=num_features,
