@@ -6,6 +6,7 @@ os.environ["WANDB_DIR"] = "./wandb"
 os.environ["WANDB_CACHE_DIR"] = "./wandb_cache"
 os.environ["WANDB_START_METHOD"] = "thread"
 
+from src.config import SWEEPS
 from src.bert import run_baseline as run_baseline_bert
 from src.bert import run_sweep as run_sweep_bert
 from src.cnn import run_baseline as run_baseline_cnn
@@ -18,18 +19,29 @@ from src.fusion import run_baseline as run_baseline_fusion
 from src.fusion import run_sweep as run_sweep_fusion
 
 def launch_baseline(model_name, config_file, run_function, project):
+    """
+    Intermediate function to launch baseline run in respective [model].py file
+    """
     print(f"Running baseline training for model: {model_name}")
     run_function(project=project, config_file=config_file)
 
 def launch_sweep(model_name, sweep_file, run_function, project):
+    """
+    Intermediate function to launch sweep run in respective [model].py file
+    Sets wandb sweep config with parameters from config/[model]_sweep[_frozen/_unfrozen].yaml
+    Uses wandb agent to limit sweeps to 25
+    """
     print(f"Launching sweep for {model_name}")
     with open(sweep_file) as f:
         sweep_config = yaml.safe_load(f)
     sweep_id = wandb.sweep(sweep_config, project=project)
-    wandb.agent(sweep_id, function=run_function, count=25) # limit sweeps to save time
+    wandb.agent(sweep_id, function=run_function, count=SWEEPS) # limit sweeps to save time
 
 def main():
-
+    """
+    Route to task based on user arguments
+    """
+    # Parse user arguments
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "--mode", type=str, default="",
@@ -61,7 +73,7 @@ def main():
         ("bert", "config/bert_sweep_frozen.yaml", run_sweep_bert),
         ("bert", "config/bert_sweep_unfrozen.yaml", run_sweep_bert),
         ("cnn", "config/cnn_sweep_frozen.yaml", run_sweep_cnn),
-        ("cnn", "config/cnn_sweep_unfrozen.yaml", run_sweep_cnn),
+        ("cnn", "config/cnn_sweep_unfrozen.yaml", run_sweep_cnn), # separate frozen & unfrozen sweeps for cleaner config
         ("mlp", "config/mlp_sweep.yaml", run_sweep_mlp),
         ("lstm", "config/lstm_sweep.yaml", run_sweep_lstm),
         ("fusion", "config/fusion_sweep.yaml", run_sweep_fusion)
@@ -74,7 +86,7 @@ def main():
             if model_name == args.model: # if model name matches
                 launch_sweep(model_name, sweep_file, run_func, args.project)
         
-    # Single-run training
+    # Baseline run
     elif args.mode == "baseline":
         print(f"Running single training for model: {args.model}")
         # Launch each sweep in a separate process
@@ -82,6 +94,7 @@ def main():
             if model_name == args.model: # if model name matches
                 launch_baseline(model_name, baseline_file, run_func, args.project)   
 
+    # Precompute features for faster runs
     elif args.mode == "precompute":
         from src.precompute_fusion_features import extract_features
         print("Running fusion feature precomputation...")
@@ -101,11 +114,11 @@ def main():
 if __name__ == "__main__":
     main()
 
-# # Single-run BERT
-# python src/main.py --mode single --model bert
+# baseline BERT
+# python main.py --mode baseline --model bert
 
-# # Single-run CNN
-# python src/main.py --mode single --model cnn
+# sweep CNN
+# python main.py --mode sweep --model cnn
 
-# # Start a sweep for BERT
-# python src/main.py --mode sweep --model bert
+# precompute features for fusion
+# python main.py --mode precompute --model fusion

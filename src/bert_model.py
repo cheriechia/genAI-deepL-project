@@ -1,13 +1,15 @@
 # src/bert_model.py
 
 import torch.nn as nn
-# from unsloth import FastLanguageModel
 from transformers import BertTokenizer
 from transformers import BertModel
 
 
 
-def load_bert(model_name='bert-base-uncased', max_seq_length=128):
+def load_bert(model_name='bert-base-uncased'):
+    """
+    Load BERT model and BertTokenizer
+    """
     tokenizer = BertTokenizer.from_pretrained(model_name)
     bert_model = BertModel.from_pretrained(model_name)
 
@@ -15,6 +17,13 @@ def load_bert(model_name='bert-base-uncased', max_seq_length=128):
 
 
 class CaptionBERT(nn.Module):
+    """
+    BERT-based caption classifier with additional projection layer.
+
+    Uses the [CLS] embedding for classification and optionally
+    returns projected features for multimodal fusion.
+    """
+
     def __init__(self, bert_model,
                  hidden_dim=256,
                  num_classes=3,

@@ -6,6 +6,13 @@ from torch.utils.data import DataLoader
 
 
 class TextDataset(Dataset):
+    """
+    PyTorch dataset for tokenized text inputs.
+
+    Stores HuggingFace-style encoding dictionaries and labels,
+    returning indexed tensor batches for model training.
+    """
+
     def __init__(self, encodings, labels):
         self.encodings = encodings
         self.labels = labels
@@ -22,6 +29,13 @@ class TextDataset(Dataset):
 def create_dataloaders(train_encodings, test_encodings,
                        y_train, y_test,
                        batch_size, generator, shuffle_train=True):
+    """
+    Creates training and testing DataLoaders for tokenized text data.
+
+    Wraps encoding dictionaries and labels into TextDataset
+    objects and returns batched loaders.
+    """
+
     # Creating dataset objects
     train_ds = TextDataset(train_encodings, y_train)
     test_ds = TextDataset(test_encodings, y_test)

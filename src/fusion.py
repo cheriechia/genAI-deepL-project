@@ -18,16 +18,22 @@ from torch.utils.data import TensorDataset, DataLoader
 
 
 def get_run_by_id(entity=ENTITY, project=PROJECT, run_id=None):
+    """
+    Get model of best run from WandB, using ID
+    """
     api = wandb.Api()
     return api.run(f"{entity}/{project}/{run_id}")
 
 
 def load_best_bert(run):
+    """
+    Load the best BERT run from its config fetched from WandB
+    to reproduce the best model that will produce inputs for the fusion model
+    """
     config = run.config
 
     # Load BERT model and tokenizer
-    bert_model, tokenizer = load_bert(model_name='bert-base-uncased',
-                                    max_seq_length=config["max_len"])
+    bert_model, tokenizer = load_bert(model_name='bert-base-uncased')
     model = CaptionBERT(
         bert_model,
         dropout=config["dropout"],
@@ -44,6 +50,10 @@ def load_best_bert(run):
     return model, tokenizer, config
 
 def load_best_mlp(run, input_dim=None):
+    """
+    Load the best MLP run from its config fetched from WandB
+    to reproduce the best model that will produce inputs for the fusion model
+    """
     config = run.config
 
     model = MetadataMLP(
@@ -66,6 +76,10 @@ def load_best_mlp(run, input_dim=None):
     return model, config
 
 def load_best_cnn(run):
+    """
+    Load the best CNN run from its config fetched from WandB
+    to reproduce the best model that will produce inputs for the fusion model
+    """
     config = run.config
 
     # Load pretrained ResNet backbone
@@ -97,8 +111,13 @@ def load_best_cnn(run):
 
 def _run(config, mode):
     """
-    Core training function that both sweep and baseline call.
+    Executes a single training run for the fusion model.
+
+    Loads configuration parameters, prepares precomputed features,
+    initializes the model, trains with class-balanced loss,
+    and saves the best-performing model based on validation F1.
     """
+
 
     # ----------------------------
     # Prepare Fusion Model
@@ -119,12 +138,14 @@ def _run(config, mode):
     except ValueError as e:
         raise ValueError(f"Incorrect config value type: {e}")
     
+    # Load precomputed features obtained from sub-models before their final classifier heads
     X_train = torch.load("features/fusion/X_train_fusion_noBERT.pt")
     X_test  = torch.load("features/fusion/X_test_fusion_noBERT.pt")
     y_train = torch.load("features/fusion/y_train_fusion_noBERT.pt")
     y_test  = torch.load("features/fusion/y_test_fusion_noBERT.pt")
     # modifiers for ablation study: _noCNN _noBERT _noMLP
 
+    # Create simple dataset & data loader
     train_dataset = TensorDataset(X_train, y_train)
     test_dataset  = TensorDataset(X_test, y_test)
 
@@ -134,9 +155,6 @@ def _run(config, mode):
     input_dim = X_train.shape[1]
 
     # Initialize fusion model
-    # fusion_model = FusionModel(input_dim=input_dim,
-    #                         hidden_dim=hidden_dim,
-    #                         dropout=dropout).to(DEVICE)
     fusion_model = FusionModel(
         input_dim=input_dim,
         hidden_dim=hidden_dim,
@@ -190,8 +208,8 @@ def run_sweep():
 
 def run_baseline(config_file="baseline.yaml", project="instagram-posts"):
     """
-    Single-run baseline.
-    config_override: dict of fixed parameters, e.g. max_len, dropout, learning_rate
+    Baseline run with 1 set of fixed parameters from config/[model]_baseline.yaml
+    Initializes wandb with config and reads config from wandb.
     """
     # Load the baseline config from YAML
     with open(config_file, "r") as f:

@@ -3,6 +3,7 @@
 ## Table of Contents
 * [Problem Statement](#problem-statement)
 * [Overview of the folder structure and description of files](#overview-of-the-folder-structure-and-description-of-files)
+* [Instructions for executing the code and modifying any parameters](#instructions-for-executing-the-code-and-modifying-any-parameters)
 * [Description of logical steps/flow](#description-of-logical-stepsflow)
 * [Dataset summary](#dataset-summary)
 * [How the features in the dataset are processed](#describe-how-the-features-in-the-dataset-are-processed)
@@ -25,23 +26,23 @@ Engagement is defined as the level of audience interaction a post receives, meas
 ## Overview of the folder structure and description of files
 ```
 ├── src/
-│   ├── bert.py                         [Prepare data, run baseline/sweep of BERT]
+│   ├── bert.py                         [Data preparation, and run baseline/sweep script for BERT]
 │   ├── bert_dataset.py                 [TextDataset for BERT, and dataloader]
 │   ├── bert_model.py                   [CaptionBERT model]
-│   ├── cnn.py                          [Prepare data, run baseline/sweep of ResNet18]
+│   ├── cnn.py                          [Data preparation, and run baseline/sweep script for ResNet18]
 │   ├── cnn_dataset.py                  [ImageDataset for CNN, and dataloader]
 │   ├── cnn_model.py                    [ImageResNet ResNet18 model]
 │   ├── config.py                       [General config (device, seed, num_classes etc.)]
 │   ├── evaluate_metrics.py             [General evaluation of accuracy, macroF1, confusion matrix]
 │   ├── fusion.py                       [Functions to get best run from WandB, load best models, run baseline/sweep of fusion model]
 │   ├── fusion_model.py                 [FusionModel model]
-│   ├── lstm.py                         [Prepare data, run baseline/sweep of LSTM]
+│   ├── lstm.py                         [Data preparation, and run baseline/sweep script for LSTM]
 │   ├── lstm_dataset.py                 [CaptionDataset for LSTM, and dataloader]
 │   ├── lstm_model.py                   [CaptionRNN model]
-│   ├── mlp.py                          [Prepare data, run baseline/sweep of MLP]
+│   ├── mlp.py                          [Data preparation, and run baseline/sweep script for MLP]
 │   ├── mlp_dataset.py                  [MetadataDataset for MLP, and dataloader]
 │   ├── mlp_model.py                    [MetadataMLP model]
-│   ├── precompute_fusion_features.py   [Load best models runs, prepare data, save as .pt for fusion run.]
+│   ├── precompute_fusion_features.py   [Load best models runs, prepare data, save as .pt for model run.]
 │   ├── save_best.py                    [General saving of best model from each baseline/sweep run, upload to WandB]
 │   ├── train.py                        [General train, eval, wandb metrics logging manager]
 │   └── utils.py                        [General set seed for repeatability and compute weights for class balance]
@@ -54,7 +55,7 @@ Engagement is defined as the level of audience interaction a post receives, meas
 │   ├── cnn_sweep_frozen.yaml
 │   ├── cnn_sweep_unfrozen.yaml
 │   ├── fusion_baseline.yaml
-│   ├── fusion_selected_runs.yaml       [final selected best run IDs from WandB]
+│   ├── fusion_selected_runs.yaml       [Run IDs from WandB for best runs from each model]
 │   ├── fusion_sweep.yaml
 │   ├── lstm_baseline.yaml
 │   ├── lstm_sweep.yaml
@@ -71,9 +72,59 @@ Engagement is defined as the level of audience interaction a post receives, meas
 │   ├── rnn_for_captions_BERT.ipynb         [Initial BERT tests (milestone)]
 │   └── rnn_for_captions_LSTM.ipynb         [Initial LSTM tests (milestone)]
 |
+├── charts/                                 [Experiment charts referenced in README.md]
+├── docs/                                   [All reports and slides]
+├── huggingface1.png                        [Screenshot of UI for Huggingface space]
+├── huggingface2.png                        [Screenshot of UI for Huggingface space]
 ├── README.md
-├── requirements.txt
+├── requirements.txt                        [Packages required]
 └── main.py                                 [Main launcher of all runs]
+```
+## Instructions for executing the code and modifying any parameters
+### Instructions for executing the code
+**1. Install dependencies**
+
+Make sure you have Python 3.11+ installed.
+Then install the required packages:
+```shell
+pip install -r requirements.txt
+```
+
+**2. Run the code**
+The code has several modes and involves several models:
+mode: baseline, sweep or precompute
+model_name: fusion, all, bert, mlp, cnn, lstm
+
+Here are some options for running the code:
+```shell
+# To precompute the features from the dataset:
+python main.py --mode precompute --model [any]
+
+# To precompute the features for the fusion model, after best sub-models are selected:
+python main.py --mode precompute --model fusion
+
+# To do a baseline run of any/all model(s):
+python main.py --mode baseline --model [model_name]
+
+# To do a sweep run of any/all model(s):
+python main.py --mode sweep --model [model_name]
+```
+
+### Modifying Parameters
+
+Configurable parameters for all model baseline/sweep runs are stored in each file labelled separately:
+```
+config/*.yaml
+```
+
+The best models are saved in this file by their WandB run IDs:
+```
+config/fusion_selected_runs.yaml
+```
+
+Basic parameters used in all runs (e.g. device, num_classes, patience, project) are stored in:
+```
+src/config.py
 ```
 
 ## Description of logical steps/flow of the pipeline

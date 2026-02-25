@@ -7,6 +7,11 @@ from sklearn.utils.class_weight import compute_class_weight
 
 
 def set_seed(seed=42):
+    """
+    Sets random seeds for reproducibility across Python, NumPy, and PyTorch.
+    Configures deterministic CUDA behavior for consistent experiment results.
+    """
+
     random.seed(seed)
     np.random.seed(seed)
     torch.manual_seed(seed)
@@ -17,6 +22,11 @@ def set_seed(seed=42):
 
 
 def compute_weights(y, device):
+    """
+    Computes class-balanced weights from label distribution and returns them as a tensor on the specified device.
+    Used to mitigate class imbalance during training.
+    """
+
     classes = np.unique(y)
     weights = compute_class_weight(
         class_weight="balanced",

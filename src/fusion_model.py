@@ -1,20 +1,15 @@
 import torch.nn as nn
 import torch
 
-# class FusionModel(torch.nn.Module):
-#     def __init__(self, input_dim, num_classes=3, hidden_dim=256, dropout=0.3):
-#         super().__init__()
-#         self.classifier = torch.nn.Sequential(
-#             torch.nn.Linear(input_dim, hidden_dim),
-#             torch.nn.ReLU(),
-#             torch.nn.Dropout(dropout),
-#             torch.nn.Linear(hidden_dim, num_classes)
-#         )
-
-#     def forward(self, x):
-#         return self.classifier(x)
-
 class FusionModel(torch.nn.Module):
+    """
+    Feedforward fusion network for multimodal feature integration.
+
+    Optionally applies feature-wise gating before passing inputs
+    through one or two fully connected layers with dropout,
+    followed by a final classification layer.
+    """
+
     def __init__(
         self,
         input_dim,
@@ -30,10 +25,6 @@ class FusionModel(torch.nn.Module):
 
         # ---------- Gating mechanism ----------
         if use_gating:
-            # self.gate = torch.nn.Sequential(
-            #     torch.nn.Linear(input_dim, hidden_dim),
-            #     torch.nn.Sigmoid()
-            # )
             self.gate = torch.nn.Sequential(
                 torch.nn.Linear(input_dim, input_dim),
                 torch.nn.Sigmoid()

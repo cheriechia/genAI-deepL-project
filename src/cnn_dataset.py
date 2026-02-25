@@ -6,6 +6,14 @@ from torch.utils.data import DataLoader
 from PIL import Image
 
 class ImageDataset(Dataset):
+    """
+    PyTorch dataset for image classification.
+
+    Loads images from file paths in a dataframe,
+    applies optional transformations, and returns
+    image-label pairs.
+    """
+
     def __init__(self, df, img_col="image_path", target_col="engagement_label", transform=None):
         self.df = df.reset_index(drop=True)
         self.img_col = img_col
@@ -32,6 +40,13 @@ class ImageDataset(Dataset):
 def create_dataloaders(train_encodings, test_encodings,
                        train_transform, test_transform,
                        batch_size, generator, shuffle_train=True):
+    """
+    Creates training and testing DataLoaders for image data.
+
+    Wraps dataframes in ImageDataset objects and
+    returns batched loaders with specified transforms.
+    """
+
     # Creating dataset objects
     train_ds = ImageDataset(train_encodings, transform=train_transform)
     test_ds = ImageDataset(test_encodings, transform=test_transform)

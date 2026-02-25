@@ -19,6 +19,13 @@ from torchvision import transforms
 import torchvision.models as models
 
 def extract_first_image_path(x):
+    """
+    Extracts the first valid image path from a list or string representation of a list.
+
+    Handles nested list strings safely and normalizes file paths.
+    Returns None if no valid image path is found.
+    """
+
     if isinstance(x, list):
         # already a list, take first element
         return x[0] if x else None
@@ -27,8 +34,6 @@ def extract_first_image_path(x):
         if x.startswith("[") and x.endswith("]"):
             # string representation of list → parse safely
             try:
-                # lst = ast.literal_eval(x)
-                # return lst[0] if lst else None
                 # Escape backslashes so \n doesn't become newline
                 safe_x = x.replace("\\", "\\\\")
                 lst = ast.literal_eval(safe_x)
@@ -44,6 +49,13 @@ def extract_first_image_path(x):
         return None
 
 def data_preparation(train_df, test_df):
+    """
+    Prepares image data and transformation pipelines for CNN training.
+
+    Keeps only the first image per sample, removes missing paths,
+    and constructs training and testing image augmentation transforms.
+    """
+
     # Keep only the first image
     train_df["image_path"] = train_df["image_path"].apply(extract_first_image_path)
     test_df["image_path"] = test_df["image_path"].apply(extract_first_image_path)
@@ -78,10 +90,13 @@ def data_preparation(train_df, test_df):
 
 def _run(config, mode):
     """
-    Core training function that both sweep and baseline call.
-    config must contain:
-        max_len, dropout, learning_rate, freeze_bert, batch_size, hidden_dim, epochs
+    Executes one CNN training experiment.
+
+    Handles dataset loading, model initialization with optional backbone freezing,
+    config-driven hyperparameter setup, training with class-balanced loss,
+    and best checkpoint saving.
     """
+
     set_seed(SEED)
 
     # Load preprocessed features
@@ -97,9 +112,6 @@ def _run(config, mode):
                            parse_dates=["publish_timestamp"])
     test_df = pd.read_csv("data/test_df.csv",
                           parse_dates=["publish_timestamp"])
-    # # Set labels
-    # y_train = train_df["engagement_label"].values
-    # y_test = test_df["engagement_label"].values
 
     # Load parameters from config
     try:
@@ -121,59 +133,6 @@ def _run(config, mode):
     except ValueError as e:
         raise ValueError(f"Incorrect config value type: {e}")
 
-    # # Keep only the first image
-    # train_df["image_path"] = train_df["image_path"].apply(extract_first_image_path)
-    # test_df["image_path"] = test_df["image_path"].apply(extract_first_image_path)
-    
-    # # Drop rows with no images (if any)
-    # train_df = train_df.dropna(subset=["image_path"]).reset_index(drop=True)
-    # test_df = test_df.dropna(subset=["image_path"]).reset_index(drop=True)
-
-        # # Convert image paths string to list
-        # train_df["image_path"] = train_df["image_path"].apply(
-        #     lambda x: ast.literal_eval(x) if isinstance(x, str) else x
-        # )
-        # test_df["image_path"] = test_df["image_path"].apply(
-        #     lambda x: ast.literal_eval(x) if isinstance(x, str) else x
-        # )
-        # # Keep only the first image (if list exists and is not empty)
-        # train_df["image_path"] = train_df["image_path"].apply(
-        #     lambda x: x[0] if isinstance(x, list) and len(x) > 0 else None
-        # )
-
-        # test_df["image_path"] = test_df["image_path"].apply(
-        #     lambda x: x[0] if isinstance(x, list) and len(x) > 0 else None
-        # )
-
-        # # Explode multiple images in image_path, to each be mapped to the engagement label
-        # train_df = train_df.explode("image_path").reset_index(drop=True)
-        # test_df = test_df.explode("image_path").reset_index(drop=True)
-
-    # # Define image transforms
-    # IMAGE_SIZE = 224  # ResNet expects 224x224
-
-    # train_transform = transforms.Compose([
-    #     transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
-    #     transforms.RandomHorizontalFlip(),   # data augmentation
-    #     transforms.ToTensor(),
-    #     transforms.Normalize(
-    #         mean=[0.485, 0.456, 0.406],        # ImageNet mean
-    #         std=[0.229, 0.224, 0.225]          # ImageNet std
-    #     )
-    # ])
-
-    # test_transform = transforms.Compose([
-    #     transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
-    #     transforms.ToTensor(),
-    #     transforms.Normalize(
-    #         mean=[0.485, 0.456, 0.406],
-    #         std=[0.229, 0.224, 0.225]
-    #     )
-    # ])
-
-    # Data Preparation
-    # train_transform, test_transform = data_preparation(train_df, test_df)
-
     # set seed for dataloader shuffling order to make it deterministic
     g = torch.Generator().manual_seed(SEED)
 
@@ -187,8 +146,6 @@ def _run(config, mode):
         g
     )
 
-    # Set parameters for model and optimizer
-    # resnet = models.resnet18(weights="IMAGENET1K_V1")
     # Load pretrained ResNet backbone
     resnet = models.resnet18(weights=models.ResNet18_Weights.IMAGENET1K_V1)
     # Save number of features before removing fc
@@ -215,20 +172,6 @@ def _run(config, mode):
             model.classifier.parameters(),
             lr=lr_head
         )
-        # # Freeze backbone
-        # for name, param in model.backbone.named_parameters():
-        #     # if "fc" not in name:   # do not freeze fc
-        #     param.requires_grad = False
-
-        # # New fc layers are trainable by default
-        # for param in model.resnet.fc.parameters():
-        #     param.requires_grad = True
-
-        # # Optimizer
-        # optimizer = torch.optim.Adam(
-        #     model.resnet.fc.parameters(),  # only train classifier head
-        #     lr=lr_head
-        # )
 
     else:
          
@@ -244,18 +187,6 @@ def _run(config, mode):
             {"params": model.backbone.layer4.parameters(), "lr": lr_backbone},
             {"params": model.classifier.parameters(), "lr": lr_head},
         ])
-        # for param in model.resnet.parameters(): # freeze everything first
-        #     param.requires_grad = False 
-        # for param in model.resnet.layer4.parameters(): # Unfreeze last layer4 block
-        #     param.requires_grad = True
-        # for param in model.resnet.fc.parameters(): # Keep fc head trainable
-        #     param.requires_grad = True
-
-        # # Set optimizer from partially unfrozen ResNet
-        # optimizer = torch.optim.Adam([
-        #     {"params": model.resnet.layer4.parameters(), "lr": lr_backbone},
-        #     {"params": model.resnet.fc.parameters(), "lr": lr_head},
-        # ])
 
     # Weights for class imbalance
     class_weights = compute_weights(y_train, DEVICE)
@@ -280,16 +211,6 @@ def _run(config, mode):
     # Save only ONCE here (best model of single run in sweep)
     save_best_model(model, model_name, mode, best_f1)
 
-    # # Log best F1
-    # wandb.log({
-    #     "model": model_name,
-    #     "best_macro_f1": best_f1
-    # })
-
-    # # Save best model
-    # save_path = f"best_model_{model_name}.pt"
-    # torch.save(model.state_dict(), save_path)
-    # print(f"Saved best model to {save_path}")
 
 
 # ----------------------------
@@ -310,8 +231,8 @@ def run_sweep():
 
 def run_baseline(config_file="baseline.yaml", project="instagram-posts"):
     """
-    Single-run baseline.
-    config_override: dict of fixed parameters, e.g. max_len, dropout, learning_rate
+    Baseline run with 1 set of fixed parameters from config/[model]_baseline.yaml
+    Initializes wandb with config and reads config from wandb.
     """
     # Load the baseline config from YAML
     with open(config_file, "r") as f:

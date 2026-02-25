@@ -4,15 +4,20 @@ import torch.nn as nn
 import torchvision.models as models
 
 
-# resnet = models.resnet18(weights="IMAGENET1K_V1")
 resnet = models.resnet18(
         weights=models.ResNet18_Weights.IMAGENET1K_V1
     )
 class ImageResNet(nn.Module):
+    """
+    ResNet-based image classifier with custom classification head.
+
+    Uses a pretrained backbone for feature extraction and
+    optionally returns intermediate features for fusion.
+    """
+
     def __init__(self, resnet_model, num_features=512, num_classes=3, dropout=0.5):
         super().__init__()
-        # self.resnet = resnet_model
-        # num_features = self.resnet.fc.in_features
+
         resnet_model.fc = nn.Identity()  # remove original fc
         self.backbone = resnet_model   # backbone outputs 512-dim features
 

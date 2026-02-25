@@ -4,6 +4,13 @@ import torch.nn as nn
 
 
 class CaptionRNN(nn.Module):
+    """
+    LSTM-based caption classifier with embedding layer.
+
+    Encodes token sequences into a fixed-length representation
+    for multi-class prediction, with optional feature extraction.
+    """
+
     def __init__(self, vocab_size, embed_dim, hidden_dim, num_classes=3, dropout=0.5):
         super().__init__()
 

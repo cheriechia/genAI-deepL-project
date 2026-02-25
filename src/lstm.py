@@ -1,4 +1,4 @@
-# bert.py
+# lstm.py
 
 import wandb
 import torch
@@ -14,8 +14,13 @@ from src.lstm_model import CaptionRNN
 from src.train import train_model
 from src.save_best import save_best_model
 
-# Simple tokenizer: split on spaces, remove non-alphanumeric chars
+
 def tokenize(text):
+    """
+    Basic text tokenizer that lowercases input and extracts alphanumeric word tokens.
+    Returns an empty list if input is not a valid string.
+    """
+
     if not isinstance(text, str):
         return []
     # lowercase and keep only words (a-z, 0-9)
@@ -24,6 +29,13 @@ def tokenize(text):
     return tokens
 
 def encode_caption(caption, vocab, max_len):
+    """
+    Encodes caption text into fixed-length token ID sequences using a vocabulary.
+
+    Unknown tokens are mapped to <UNK> and sequences are padded or truncated
+    to match the specified maximum length.
+    """
+
     tokens = tokenize(caption)
     seq = [vocab.get(tok, vocab["<UNK>"]) for tok in tokens]
     # pad or truncate
@@ -35,10 +47,13 @@ def encode_caption(caption, vocab, max_len):
 
 def _run(config, mode):
     """
-    Core training function that both sweep and baseline call.
-    config must contain:
-        max_len, dropout, learning_rate, freeze_bert, batch_size, hidden_dim, epochs
+    Executes one training experiment for the RNN caption classification model.
+
+    Handles dataset loading, vocabulary construction, sequence encoding,
+    model initialization, training with class-balanced loss, and checkpoint saving.
+    Supports both sweep and baseline execution modes.
     """
+
     set_seed(SEED)
 
     # Load split data
@@ -141,18 +156,6 @@ def _run(config, mode):
     # Save only ONCE here (best model of single run in sweep)
     save_best_model(model, model_name, mode, best_f1)
 
-    # # Log best F1
-    # wandb.log({
-    #     "model": model_name,
-    #     "best_macro_f1": best_f1
-    # })
-
-    # # Save best model
-    # save_path = f"best_model_{model_name}.pt"
-    # torch.save(model.state_dict(), save_path)
-    # print(f"Saved best model to {save_path}")
-
-
 # ----------------------------
 # Functions exposed to main.py
 # ----------------------------
@@ -171,8 +174,8 @@ def run_sweep():
 
 def run_baseline(config_file="baseline.yaml", project="instagram-posts"):
     """
-    Single-run baseline.
-    config_override: dict of fixed parameters, e.g. max_len, dropout, learning_rate
+    Baseline run with 1 set of fixed parameters from config/[model]_baseline.yaml
+    Initializes wandb with config and reads config from wandb.
     """
     # Load the baseline config from YAML
     with open(config_file, "r") as f:

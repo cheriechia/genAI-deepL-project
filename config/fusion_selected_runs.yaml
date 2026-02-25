@@ -1,9 +1,4 @@
-# Sweep 1
-# mlp: l0i1cwmq
-# bert: xldv9mrf
-# cnn: n8fu13jz
-
-# sweep 2
+# Best of each model, IDs from WandB
 fusion: vmf4og87
 mlp: c9rjf077
 bert: 2ryf9waj

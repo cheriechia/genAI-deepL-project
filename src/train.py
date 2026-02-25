@@ -6,6 +6,21 @@ import copy
 from src.evaluate_metrics import evaluate_metrics
 
 def train_epoch(model, loader, optimizer, criterion, device):
+    """
+    Performs one training epoch over the dataset.
+
+    Supports both:
+    - Dictionary-style batches (BERT tokenizer outputs)
+    - Tuple-style batches (traditional ML models such as CNN, MLP, LSTM)
+
+    The function:
+    - Executes forward pass
+    - Computes loss
+    - Performs backpropagation
+    - Updates model parameters
+    - Collects predictions and labels for metric computation
+    """
+
 
     model.train()
     total_loss = 0
@@ -51,6 +66,28 @@ def train_epoch(model, loader, optimizer, criterion, device):
     return train_loss, all_preds, all_labels
 
 def eval_epoch(model, loader, criterion, device):
+    """
+    Evaluates model performance over one epoch without gradient updates.
+
+    The model is set to evaluation mode to:
+    - Disable dropout layers
+    - Freeze batch normalization statistics
+
+    Supports two batch input formats:
+    - Dictionary-style batches (e.g., BERT tokenizer outputs)
+    - Tuple-style batches (e.g., CNN, MLP, LSTM datasets)
+
+    The function performs:
+    - Forward pass inference
+    - Loss computation
+    - Prediction collection for metric evaluation
+
+    Returns:
+    - Average evaluation loss
+    - List of predicted labels
+    - List of ground-truth labels
+    """
+
     # Set model to evaluation mode. Disables dropout, freezes batchnorm stats
     model.eval()
 
@@ -93,6 +130,30 @@ def train_model(model,
                 device,
                 epochs,
                 patience):
+    """
+    Trains the model using mini-batch gradient descent with early stopping.
+
+    Training procedure:
+    - Alternates between training and evaluation epochs
+    - Computes classification metrics after each epoch
+    - Logs performance metrics and confusion matrices to Weights & Biases
+
+    Early stopping is triggered based on test macro-F1 score improvement.
+
+    Parameters:
+    - model: Neural network model
+    - train_loader: Training data DataLoader
+    - test_loader: Validation/Test DataLoader
+    - optimizer: Optimization algorithm
+    - criterion: Loss function
+    - device: Computing device (CPU/GPU)
+    - epochs: Maximum training epochs
+    - patience: Early stopping patience threshold
+
+    Returns:
+    - Best macro-F1 score achieved during training
+    - Corresponding model state dictionary
+    """
 
     best_f1 = 0
     best_state_dict = None
@@ -133,12 +194,12 @@ def train_model(model,
                 "train/loss": train_loss,
                 "train/macro_f1": train_macro_f1,
                 "train/accuracy": train_acc,
-                # "train/confusion_matrix":
-                #     wandb.plot.confusion_matrix(
-                #         preds=train_preds,
-                #         y_true=train_labels,
-                #         class_names=class_names
-                #     ),
+                "train/confusion_matrix":
+                    wandb.plot.confusion_matrix(
+                        preds=train_preds,
+                        y_true=train_labels,
+                        class_names=class_names
+                    ),
 
                 "test/loss": test_loss,
                 "test/macro_f1": test_macro_f1,

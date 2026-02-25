@@ -3,6 +3,13 @@
 import torch.nn as nn
 
 class MetadataMLP(nn.Module):
+    """
+    Two-hidden-layer MLP for structured metadata classification.
+
+    Applies fully connected layers with ReLU and dropout,
+    optionally returning intermediate features for fusion.
+    """
+
     def __init__(self, 
                  input_dim, 
                  hidden_dim1=64, 

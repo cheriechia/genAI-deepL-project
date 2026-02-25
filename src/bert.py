@@ -13,6 +13,13 @@ from src.train import train_model
 from src.save_best import save_best_model
 
 def data_preparation(train_df, test_df, tokenizer, max_len):
+    """
+    Prepares caption text data for BERT encoding.
+
+    Handles missing captions, applies tokenizer preprocessing,
+    and returns tokenized training and testing encodings as tensors.
+    """
+
     # Fill missing captions with ""
     train_df["caption"] = train_df["caption"].fillna("")
     test_df["caption"] = test_df["caption"].fillna("")
@@ -38,8 +45,13 @@ def data_preparation(train_df, test_df, tokenizer, max_len):
 
 def _run(config, mode):
     """
-    Core training function that both sweep and baseline call.
+    Executes one BERT classification training experiment.
+
+    Loads tokenized caption data, initializes BERT-based classifier,
+    configures model freezing strategy, trains with class-balanced loss,
+    and saves the best checkpoint based on validation performance.
     """
+
     set_seed(SEED)
 
     # Load preprocessed features
@@ -49,11 +61,6 @@ def _run(config, mode):
     y_train = train_data["y_train"]
     test_encodings = test_data["X_test"]
     y_test = test_data["y_test"]
-    # # Load split data
-    # train_df = pd.read_csv("data/train_df.csv",
-    #                        parse_dates=["publish_timestamp"])
-    # test_df = pd.read_csv("data/test_df.csv",
-    #                       parse_dates=["publish_timestamp"])
 
     # Load parameters from config
     try:
@@ -77,33 +84,7 @@ def _run(config, mode):
         raise ValueError(f"Incorrect config value type: {e}")
 
     # Load BERT model and tokenizer
-    bert_model, tokenizer = load_bert(model_name='bert-base-uncased',
-                                      max_seq_length=max_len)
-
-    # Data Preparation
-    # train_encodings, test_encodings = data_preparation(train_df, test_df, tokenizer, max_len)
-    # train_encodings, test_encodings = data_preparation(train_df, test_df, tokenizer, max_len)
-
-    # # Set labels
-    # y_train = train_df["engagement_label"].values
-    # y_test = test_df["engagement_label"].values
-
-    # # Tokenize train and test sets separately
-    # train_encodings = tokenizer(
-    #     train_df["caption"].tolist(),
-    #     padding="max_length",
-    #     truncation=True,
-    #     max_length=max_len,
-    #     return_tensors="pt"
-    # )
-
-    # test_encodings = tokenizer(
-    #     test_df["caption"].tolist(),
-    #     padding="max_length",
-    #     truncation=True,
-    #     max_length=max_len,
-    #     return_tensors="pt"
-    # )
+    bert_model, tokenizer = load_bert(model_name='bert-base-uncased')
 
     # set seed for dataloader shuffling order to make it deterministic
     g = torch.Generator().manual_seed(SEED)
@@ -167,42 +148,13 @@ def _run(config, mode):
         patience=PATIENCE
     )
 
-    # # Log best F1
-    # wandb.log({
-    #     "model": model_name,
-    #     "best_macro_f1": best_f1
-    # })
-
     # Load best weights back into model
     model.load_state_dict(best_state_dict)
 
     # Save only ONCE here (best model of single run in sweep)
     save_best_model(model, model_name, mode, best_f1)
 
-    # # Save best model
-    # if mode == 'baseline':
-    #     save_path = f"best_model_{model_name}.pt"
-    #     torch.save(model.state_dict(), save_path)
-    #     print(f"Saved best model to local {save_path}")
-    # else:
-    #     # Save model directly to W&B without keeping a permanent local copy
-    #     with tempfile.NamedTemporaryFile(suffix=".pt") as tmp_file:
-    #         torch.save(model.state_dict(), tmp_file.name)
-            
-    #         artifact = wandb.Artifact(
-    #             name=f"model-{wandb.run.id}",
-    #             type="model"
-    #         )
-    #         artifact.add_file(tmp_file.name)
-    #         wandb.log_artifact(artifact)
-    #         print(f"Saved best model to W&B artifact {artifact.name}")
-
-    # artifact = wandb.Artifact(
-    #     name=f"model-{wandb.run.id}",
-    #     type="model"
-    # )
-    # artifact.add_file(save_path)
-    # wandb.log_artifact(artifact)
+    
 # ----------------------------
 # Functions exposed to main.py
 # ----------------------------
@@ -221,8 +173,8 @@ def run_sweep():
 
 def run_baseline(config_file="baseline.yaml", project="instagram-posts"):
     """
-    Single-run baseline.
-    config_override: dict of fixed parameters, e.g. max_len, dropout, learning_rate
+    Baseline run with 1 set of fixed parameters from config/[model]_baseline.yaml
+    Initializes wandb with config and reads config from wandb.
     """
     # Load the baseline config from YAML
     with open(config_file, "r") as f:

@@ -65,8 +65,6 @@ def extract_features(model_name):
     # -------------------------
     if model_name != 'fusion': 
         # BERT inputs
-        # torch.save(train_encodings, "features/bert/bert_train_inputs.pt")
-        # torch.save(test_encodings,  "features/bert/bert_test_inputs.pt")
         torch.save(
             {
                 "X_train": train_encodings,
@@ -83,8 +81,6 @@ def extract_features(model_name):
         )
 
         # MLP inputs
-        # torch.save(X_train_proc, "features/mlp/mlp_train_inputs.pt")
-        # torch.save(X_test_proc,  "features/mlp/mlp_test_inputs.pt")
         torch.save(
             {
                 "X_train": X_train_proc,
@@ -100,11 +96,7 @@ def extract_features(model_name):
             "features/mlp/mlp_test_inputs.pt"
         )
 
-
-
-        # CNN inputs (if dataset-style transforms)
-        # torch.save(train_transform, "features/cnn/cnn_train_meta.pt")
-        # torch.save(test_transform,  "features/cnn/cnn_test_meta.pt")
+        # CNN inputs
         torch.save(
             {
                 "X_train": train_transform,
@@ -133,24 +125,6 @@ def extract_features(model_name):
         best_cnn_run  = get_run_by_id(run_id=run_ids["cnn"])
         cnn_model, cnn_config = load_best_cnn(best_cnn_run)
         cnn_model.eval()
-        # with open("config/fusion_selected_runs.yaml", "r") as f:
-        #     run_ids = yaml.safe_load(f)
-
-        # # best_bert_run = get_run_by_id(run_id=run_ids["bert"])
-        # best_cnn_run  = get_run_by_id(run_id=run_ids["cnn"])
-        # best_mlp_run  = get_run_by_id(run_id=run_ids["mlp"])
-
-        # # bert_model, tokenizer, bert_config = load_best_bert(best_bert_run)
-        # cnn_model, cnn_config = load_best_cnn(best_cnn_run)
-        # mlp_model, mlp_config = load_best_mlp(best_mlp_run, input_dim=X_train_proc.shape[1]) # Input size matching one-hot expanded features
-
-        # # bert_model.eval()
-        # cnn_model.eval()
-        # mlp_model.eval()
-
-        # reassign labels
-        # y_train = torch.tensor(y_train, dtype=torch.long)
-        # y_test  = torch.tensor(y_test, dtype=torch.long)
 
         # set seed for dataloader shuffling order to make it deterministic
         g = torch.Generator().manual_seed(SEED)
@@ -213,7 +187,7 @@ def extract_features(model_name):
                         dim=1
                     )
 
-                    # for ablation study
+                    # edit for ablation study
                     # fusion_feat = torch.cat(
                     #     [cnn_feat, mlp_feat],
                     #     dim=1
