@@ -146,7 +146,7 @@ embed_dim | - | [50, 100] | - | - | - | -
 dropout | min: 0.3, max: 0.5 | min: 0.3, max: 0.6 | min: 0.3, max: 0.5 | min: 0.3, max: 0.5 | min: 0.3, max: 0.5 | min: 0.3, max: 0.5 |
 max_len | - | [32, 64, 128] | [64, 128] | [64, 128] | - | -
 learning_rate | min: 0.0005, max: 0.001 | min: 0.0005, max: 0.001 | min: 0.0005, max: 0.001 | min: 0.00002, max: 0.00005 | lr_head min: 0.0005, max: 0.002 | lr_backbone: min: 0.0001, max: 0.001, lr_head min: 0.0005, max: 0.002 
-freeze | - | - | true | false | true | false
+freeze | - | - | true | false (last 2 layers) | true | false (layer4 block)
 
 ## Evaluation of the sub-models developed
 ### LSTM VS Frozen BERT VS Unfrozen BERT
