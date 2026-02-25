@@ -77,14 +77,22 @@ def _run(config, mode):
     """
     set_seed(SEED)
 
-    # Load split data
+    # Load preprocessed features
+    train_data = torch.load("features/cnn/cnn_train_meta.pt", weights_only=False)
+    test_data  = torch.load("features/cnn/cnn_test_meta.pt", weights_only=False)
+    train_transform = train_data["X_train"]
+    y_train = train_data["y_train"]
+    test_transform = test_data["X_test"]
+    y_test = test_data["y_test"]
+    
+    # # Load split data
     train_df = pd.read_csv("data/train_df.csv",
                            parse_dates=["publish_timestamp"])
     test_df = pd.read_csv("data/test_df.csv",
                           parse_dates=["publish_timestamp"])
-    # Set labels
-    y_train = train_df["engagement_label"].values
-    y_test = test_df["engagement_label"].values
+    # # Set labels
+    # y_train = train_df["engagement_label"].values
+    # y_test = test_df["engagement_label"].values
 
     # Load parameters from config
     try:

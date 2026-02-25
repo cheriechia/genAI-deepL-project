@@ -42,11 +42,26 @@ def _run(config, mode):
     """
     set_seed(SEED)
 
+<<<<<<< Updated upstream
     # Load split data
     train_df = pd.read_csv("data/train_df.csv",
                            parse_dates=["publish_timestamp"])
     test_df = pd.read_csv("data/test_df.csv",
                           parse_dates=["publish_timestamp"])
+=======
+    # Load preprocessed features
+    train_data = torch.load("features/bert/bert_train_inputs.pt", weights_only=False)
+    test_data  = torch.load("features/bert/bert_test_inputs.pt", weights_only=False)
+    train_encodings = train_data["X_train"]
+    y_train = train_data["y_train"]
+    test_encodings = test_data["X_test"]
+    y_test = test_data["y_test"]
+    # # Load split data
+    # train_df = pd.read_csv("data/train_df.csv",
+    #                        parse_dates=["publish_timestamp"])
+    # test_df = pd.read_csv("data/test_df.csv",
+    #                       parse_dates=["publish_timestamp"])
+>>>>>>> Stashed changes
 
     # Load parameters from config
     try:
@@ -76,9 +91,9 @@ def _run(config, mode):
     # Data Preparation
     train_encodings, test_encodings = data_preparation(train_df, test_df, tokenizer, max_len)
 
-    # Set labels
-    y_train = train_df["engagement_label"].values
-    y_test = test_df["engagement_label"].values
+    # # Set labels
+    # y_train = train_df["engagement_label"].values
+    # y_test = test_df["engagement_label"].values
 
     # # Tokenize train and test sets separately
     # train_encodings = tokenizer(
