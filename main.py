@@ -2,6 +2,9 @@ import argparse
 import wandb
 import yaml
 import os
+os.environ["WANDB_DIR"] = "./wandb"
+os.environ["WANDB_CACHE_DIR"] = "./wandb_cache"
+os.environ["WANDB_START_METHOD"] = "thread"
 
 from src.bert import run_baseline as run_baseline_bert
 from src.bert import run_sweep as run_sweep_bert
@@ -82,7 +85,7 @@ def main():
     elif args.mode == "precompute":
         from src.precompute_fusion_features import extract_features
         print("Running fusion feature precomputation...")
-        extract_features()
+        extract_features(model_name = args.model)
         return
 
     else:

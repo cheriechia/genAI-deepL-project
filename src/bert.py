@@ -82,6 +82,7 @@ def _run(config, mode):
 
     # Data Preparation
     # train_encodings, test_encodings = data_preparation(train_df, test_df, tokenizer, max_len)
+    # train_encodings, test_encodings = data_preparation(train_df, test_df, tokenizer, max_len)
 
     # # Set labels
     # y_train = train_df["engagement_label"].values
