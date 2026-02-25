@@ -146,28 +146,30 @@ freeze | - | - | true | false | true | false
 ## Evaluation of the models developed
 ### LSTM VS Frozen BERT VS Unfrozen BERT
 <img src="charts/testF1_W&B Chart 23_02_2026, 18_55_04.png" width="48%" /><img src="charts/trainF1_W&B Chart 23_02_2026, 18_56_02.png" width="48%" />
-* After conducting sweeps, LSTM showed more overfitting than frozen BERT, and with poorer performance. Hence BERT was chosen as the final model for captions.
-* frozen and unfrozen BERT have similar test macro F1, but unfrozen BERT has higher train macroF1 of 69%, while frozen BERT has lower train macroF1 of 60%. This shows that unfrozen BERT was overfitting, while frozen BERT was doing similarly during inference (2% increase in macro-F1), or slightly underperforming
+* After sweeps, LSTM overfit more and performed worse than frozen BERT, leading to the selection of BERT for captions.
+* Frozen and unfrozen BERT had similar test macro F1
+* Unfrozen BERT overfit (train 69.7%, test 63%), while frozen BERT achieved comparable test performance (train 60%, test 63%) suggesting stable generalization.
 * Frozen BERT is the final model for captions, with best macro-F1 score of 63%
 
-### Frozen CNN vs Unfrozen CNN
+### Frozen ResNet18 vs Unfrozen ResNet18
 <img src="charts/testF1_W&B Chart 23_02_2026, 19_23_17.png" width="48%" /><img src="charts/trainF1_W&B Chart 23_02_2026, 19_23_48.png" width="48%" />
 * In both test and train, the unfrozen ResNet18 performed better
-* There was little to no overfitting on ResNet18, whether frozen or not, shown from a 2% drop in macro-F1 from train to test
-* Frozen ResNet18 is the final model for images, with best macro-F1 score of 59.8%
+* There was little to no overfitting on ResNet18, whether frozen or not
+* Unfrozen ResNet18 had little to no overfitting (train 62%, test 59.8%), while frozen ResNet18 achieved comparable test performance (train 56%, test 58%), suggesting stable generalization.
+* Unfrozen ResNet18 is the final model for images, with best macro-F1 score of 59.8%
 
-### Best BERT, MLP and CNN performance
+### All the best models, and fusion
 * The best MLP has macro-F1 score of 59%
 * The overall Fusion Model has best macro-F1 score of 68.6%
 <img src="charts/testF1_W&B Chart 23_02_2026, 19_26_10.png" width="48%" /><img src="charts/trainF1_W&B Chart 23_02_2026, 19_26_31.png" width="48%" />
-* Slight overfitting in fusion model is observed from the drop in macro-F1 from train to test (72% to 68%)
+* Mild overfitting in fusion model is observed from the drop in macro-F1 from train to test (72% to 68%)
 * The fusion model did help to improve the macro-F1 score, but the final performance is still only moderate.
 
 ## Conclusions
 * At 59% to 63% for macro-F1, each model was better than the random-guess performance of 33% (for 3 classes), showing that each model performs boderline moderately, with BERT and captions being slightly more useful for predicting engagement labels
 * At 68% macro-F1 for the fusion model, this shows that the combination of features does help with engagement label prediction. The fusion model performs decently but is not the best.
 
-<img src="charts/test_CM_W&B Chart 23_02_2026, 21_48_42.jpg" width="80%" />
+<img src="charts/test_CM.png" width="80%" />
 
 * The confusion matrix shows that many samples with Medium/Moderate engagement were predicted as Low, and vice versa. 
 * The Medium/Moderate engagement label also has the fewest correct predictions.
