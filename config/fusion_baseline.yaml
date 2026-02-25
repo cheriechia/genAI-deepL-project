@@ -4,3 +4,5 @@ dropout: 0.3
 learning_rate: 0.001
 batch_size: 32
 epochs: 10
+use_second_layer: false
+use_gating: false

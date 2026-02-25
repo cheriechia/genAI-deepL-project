@@ -130,9 +130,16 @@ def _run(config, mode):
     input_dim = X_train.shape[1]
 
     # Initialize fusion model
-    fusion_model = FusionModel(input_dim=input_dim,
-                            hidden_dim=hidden_dim,
-                            dropout=dropout).to(DEVICE)
+    # fusion_model = FusionModel(input_dim=input_dim,
+    #                         hidden_dim=hidden_dim,
+    #                         dropout=dropout).to(DEVICE)
+    fusion_model = FusionModel(
+        input_dim=input_dim,
+        hidden_dim=hidden_dim,
+        use_second_layer=True,
+        use_gating=True
+    ).to(DEVICE)
+
     
     # Weights for class imbalance
     class_weights = compute_weights(y_train.cpu().numpy(), DEVICE)

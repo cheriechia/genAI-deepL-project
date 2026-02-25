@@ -26,3 +26,8 @@ parameters:
   batch_size:
     value: 32
 
+  use_second_layer:
+    values: [true, false]
+
+  use_gating:
+    values: [true, false]
