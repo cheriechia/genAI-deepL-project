@@ -6,6 +6,7 @@ import torch.nn as nn
 import pandas as pd
 import yaml
 import ast
+import os
 
 from src.config import DEVICE, SEED, PATIENCE
 from src.utils import set_seed, compute_weights
@@ -26,8 +27,14 @@ def extract_first_image_path(x):
         if x.startswith("[") and x.endswith("]"):
             # string representation of list → parse safely
             try:
-                lst = ast.literal_eval(x)
-                return lst[0] if lst else None
+                # lst = ast.literal_eval(x)
+                # return lst[0] if lst else None
+                # Escape backslashes so \n doesn't become newline
+                safe_x = x.replace("\\", "\\\\")
+                lst = ast.literal_eval(safe_x)
+                if isinstance(lst, list) and len(lst) > 0:
+                    return os.path.normpath(lst[0])
+                return None
             except Exception:
                 return None
         else:
@@ -77,6 +84,10 @@ def _run(config, mode):
     """
     set_seed(SEED)
 
+    # Load preprocessed features
+    train_transform = torch.load("features/cnn/cnn_train_meta.pt", weights_only=False)
+    test_transform  = torch.load("features/cnn/cnn_test_meta.pt", weights_only=False)
+    
     # Load split data
     train_df = pd.read_csv("data/train_df.csv",
                            parse_dates=["publish_timestamp"])
@@ -157,7 +168,7 @@ def _run(config, mode):
     # ])
 
     # Data Preparation
-    train_transform, test_transform = data_preparation(train_df, test_df)
+    # train_transform, test_transform = data_preparation(train_df, test_df)
 
     # set seed for dataloader shuffling order to make it deterministic
     g = torch.Generator().manual_seed(SEED)

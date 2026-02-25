@@ -133,12 +133,12 @@ def train_model(model,
                 "train/loss": train_loss,
                 "train/macro_f1": train_macro_f1,
                 "train/accuracy": train_acc,
-                "train/confusion_matrix":
-                    wandb.plot.confusion_matrix(
-                        preds=train_preds,
-                        y_true=train_labels,
-                        class_names=class_names
-                    ),
+                # "train/confusion_matrix":
+                #     wandb.plot.confusion_matrix(
+                #         preds=train_preds,
+                #         y_true=train_labels,
+                #         class_names=class_names
+                #     ),
 
                 "test/loss": test_loss,
                 "test/macro_f1": test_macro_f1,

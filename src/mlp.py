@@ -44,6 +44,10 @@ def data_preparation(train_df, test_df):
     X_train_proc = preprocessor.fit_transform(X_train)
     X_test_proc  = preprocessor.transform(X_test)
 
+    # Set labels
+    y_train = train_df["engagement_label"].values
+    y_test = test_df["engagement_label"].values
+
     # save preprocessor
     joblib.dump(preprocessor, "models/preprocessor_mlp.pkl")
 
@@ -58,7 +62,7 @@ def data_preparation(train_df, test_df):
     # test_df_proc  = pd.DataFrame(X_test_proc, columns=all_features, index=test_df.index)
     
     # train_df_proc, test_df_proc, 
-    return X_train_proc, X_test_proc
+    return X_train_proc, X_test_proc, y_train, y_test
 
 def _run(config, mode):
     """
@@ -68,11 +72,18 @@ def _run(config, mode):
     """
     set_seed(SEED)
 
-    # Load split data
-    train_df = pd.read_csv("data/train_df.csv",
-                           parse_dates=["publish_timestamp"])
-    test_df = pd.read_csv("data/test_df.csv",
-                          parse_dates=["publish_timestamp"])
+    # Load preprocessed features
+    train_data = torch.load("features/mlp/mlp_train_inputs.pt", weights_only=False)
+    test_data  = torch.load("features/mlp/mlp_test_inputs.pt", weights_only=False)
+    X_train_proc = train_data["X_train"]
+    y_train = train_data["y_train"]
+    X_test_proc = test_data["X_test"]
+    y_test = test_data["y_test"]
+    # # Load split data
+    # train_df = pd.read_csv("data/train_df.csv",
+    #                        parse_dates=["publish_timestamp"])
+    # test_df = pd.read_csv("data/test_df.csv",
+    #                       parse_dates=["publish_timestamp"])
     
     # Load parameters from config
     try:
@@ -116,12 +127,21 @@ def _run(config, mode):
     # X_train_proc = preprocessor.fit_transform(X_train)
     # X_test_proc  = preprocessor.transform(X_test)
     
-    # Data preparation
-    X_train_proc, X_test_proc = data_preparation(train_df, test_df)
+    # # Data preparation
+    # X_train_proc, X_test_proc = data_preparation(train_df, test_df)
 
     # Set labels
-    y_train = train_df["engagement_label"].values
-    y_test = test_df["engagement_label"].values
+    # y_train = train_df["engagement_label"].values
+    # y_test = test_df["engagement_label"].values
+    # print("Train size:", len(train_df))
+    # print("Test size:", len(test_df))
+
+    # print("y_train length:", len(y_train))
+    # print("y_test length:", len(y_test))
+
+
+    print("train_encodings length:", len(X_train_proc))
+    print("test_encodings length:", len(X_test_proc))
 
     # set seed for dataloader shuffling order to make it deterministic
     g = torch.Generator().manual_seed(SEED)
@@ -195,7 +215,7 @@ def run_sweep():
     Function to be used with wandb.agent for sweeps.
     Reads config automatically from wandb.
     """
-    wandb.init(save_code=False, settings=wandb.Settings(console="off"))
+    wandb.init(save_code=False, settings=wandb.Settings(console="off"))#, start_method="thread"))
     config = wandb.config
 
     mode = "sweep"
