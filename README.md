@@ -165,6 +165,13 @@ freeze | - | - | true | false | true | false
 * Mild overfitting in fusion model is observed from the drop in macro-F1 from train to test (72% to 68%)
 * The fusion model did help to improve the macro-F1 score, but the final performance is still only moderate.
 
+### Comparing Fusion Models
+<img src="charts/allFusion_testF1_W&B Chart 25_02_2026, 15_19_55.png" width="48%" /><img src="charts/allFusion_trainF1_W&B Chart 25_02_2026, 15_19_55.png" width="48%" />
+* The basic 1-layer fusion model performed the best at inference time
+* It seemed like the 2-layer fusion model performed slightly worse, and the basic 1-layer fusion model overfit the most when rerun, but this could be attributed to randomness.
+* Additional layers in fusion model did not help, likely because of a dataset size limitation, or that models already produce high level embeddings, or because features went through a bottleneck layer before fusion.
+
+
 ## Conclusions
 * At 59% to 63% for macro-F1, each model was better than the random-guess performance of 33% (for 3 classes), showing that each model performs boderline moderately, with BERT and captions being slightly more useful for predicting engagement labels
 * At 68% macro-F1 for the fusion model, this shows that the combination of features does help with engagement label prediction. The fusion model performs decently but is not the best.
@@ -175,3 +182,11 @@ freeze | - | - | true | false | true | false
 * The Medium/Moderate engagement label also has the fewest correct predictions.
 
 ## Possible improvement
+* Larger dataset with wider spread of engagement rates
+* Labelling if engagement rate was higher than a certain threshold, instead of 3 classes
+* Add in use of hashtags that are currently unused
+* More intermediate FC layers before classifier head for more gradual bottleneck
+* Different way to merge the models instead of just FC layers: tried 2 FC layers, tried gating.
+* Fuse features earlier, before the bottleneck layer (pretrained model → dropout → fuse)
+* Using multimodal transformers instead, for cross-modal relationships to be learned through multiple layers
+* Widen hyperparameter sweep boundaries
