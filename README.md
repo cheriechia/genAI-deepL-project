@@ -6,9 +6,14 @@
 * [Description of logical steps/flow](#description-of-logical-stepsflow)
 * [Dataset summary](#dataset-summary)
 * [How the features in the dataset are processed](#describe-how-the-features-in-the-dataset-are-processed)
-* [Explanation of your choice of models](#explanation-of-your-choice-of-models)
+* [Explanation of choice of models](#explanation-of-choice-of-models)
 * [Hyperparameters](#hyperparameters)
 * [Evaluation of the models developed](#evaluation-of-the-models-developed)
+    * [LSTM VS Frozen BERT VS Unfrozen BERT](#lstm-vs-frozen-bert-vs-unfrozen-bert)
+    * [Frozen ResNet18 vs Unfrozen ResNet18](#frozen-resnet18-vs-unfrozen-resnet18)
+    * [All the best models, and fusion](#all-the-best-models-and-fusion)
+* [Comparing Fusion Models](#comparing-fusion-models)
+* [Ablation Study](#ablation-study)
 * [Conclusions](#conclusions)
 * [Possible improvement](#possible-improvement)
 
@@ -124,7 +129,7 @@ Low | less than 0.006% | less than 0.02%
 Moderate | 0.006% to 0.02% | 0.02% to 0.04%
 High | Above 0.02% | Above 0.04%
 
-## Explanation of your choice of models
+## Explanation of choice of models
 A multimodal deep learning architecture is proposed, combining separate networks for different data modalities: 
 * Multilayer Perceptron for metadata: This captures non-linear interactions and ensures compatibility for later fusion with text and image modules.
 * LSTM or BERT for captions. 
@@ -143,7 +148,7 @@ max_len | - | [32, 64, 128] | [64, 128] | [64, 128] | - | -
 learning_rate | min: 0.0005, max: 0.001 | min: 0.0005, max: 0.001 | min: 0.0005, max: 0.001 | min: 0.00002, max: 0.00005 | lr_head min: 0.0005, max: 0.002 | lr_backbone: min: 0.0001, max: 0.001, lr_head min: 0.0005, max: 0.002 
 freeze | - | - | true | false | true | false
 
-## Evaluation of the models developed
+## Evaluation of the sub-models developed
 ### LSTM VS Frozen BERT VS Unfrozen BERT
 <img src="charts/testF1_W&B Chart 23_02_2026, 18_55_04.png" width="48%" /><img src="charts/trainF1_W&B Chart 23_02_2026, 18_56_02.png" width="48%" />
 * After sweeps, LSTM overfit more and performed worse than frozen BERT, leading to the selection of BERT for captions.
@@ -165,16 +170,16 @@ freeze | - | - | true | false | true | false
 * Mild overfitting in fusion model is observed from the drop in macro-F1 from train to test (72% to 68%)
 * The fusion model did help to improve the macro-F1 score, but the final performance is still only moderate.
 
-### Comparing Fusion Models
+## Comparing Fusion Models
 <img src="charts/allFusion_testF1_W&B Chart 25_02_2026, 15_19_55.png" width="48%" /><img src="charts/allFusion_trainF1_W&B Chart 25_02_2026, 15_19_55.png" width="48%" />
 * The basic 1-layer fusion model performed the best at inference time
 * It seemed like the 2-layer fusion model performed slightly worse, and the basic 1-layer fusion model overfit the most when rerun, but this could be attributed to randomness.
 * Additional layers in fusion model did not help, likely because of a dataset size limitation, or that models already produce high level embeddings, or because features went through a bottleneck layer before fusion.
 
-### Ablation study
-This is to satisfy my curiosity on which models - BERT, ResNet18 or MLP - had the most positive or negative influence on the fused model outcome.
+## Ablation study
+* This is to satisfy my curiosity on which models - BERT, ResNet18 or MLP - had the most positive or negative influence on the fused model outcome.
 <img src="charts/ablation_testF1_W&B Chart 25_02_2026, 19_17_01.png" width="48%" /><img src="charts/ablation_trainF1_W&B Chart 25_02_2026, 19_17_01.png" width="48%" />
-Interestingly, the fusion model performed the best when it fused all models, or only excluded ResNet18. This means that ResNet18 had almost no influence on predicting engagement labels, and BERT and MLP had similar contribution.
+* Interestingly, the fusion model performed the best when it fused all models, or only excluded ResNet18. This means that ResNet18 had almost no influence on predicting engagement labels, and BERT and MLP had similar contribution.
 
 ## Conclusions
 * At 59% to 63% for macro-F1, each model was better than the random-guess performance of 33% (for 3 classes), showing that each model performs boderline moderately, with BERT and captions being slightly more useful for predicting engagement labels
