@@ -148,19 +148,23 @@ def extract_features(model_name):
         # cnn_model.eval()
         # mlp_model.eval()
 
+        # reassign labels
+        # y_train = torch.tensor(y_train, dtype=torch.long)
+        # y_test  = torch.tensor(y_test, dtype=torch.long)
+
         # set seed for dataloader shuffling order to make it deterministic
         g = torch.Generator().manual_seed(SEED)
 
         bert_train_loader, bert_test_loader = dataloader_bert(
             train_encodings, test_encodings,
-            y_train.numpy(), y_test.numpy(),
+            y_train, y_test,
             bert_config["batch_size"], g,
             shuffle_train=False   # don't mix training labels
         )
 
         mlp_train_loader, mlp_test_loader = dataloader_mlp(
             X_train_proc, X_test_proc,
-            y_train.numpy(), y_test.numpy(),
+            y_train, y_test,
             mlp_config["batch_size"], g,
             shuffle_train=False   # don't mix training labels
         )
@@ -204,15 +208,16 @@ def extract_features(model_name):
                     metadata = metadata.to(DEVICE)
                     mlp_feat = mlp_model(metadata, return_features=True)
 
-                    # fusion_feat = torch.cat(
-                    #     [bert_feat, cnn_feat, mlp_feat],
-                    #     dim=1
-                    # )
-
                     fusion_feat = torch.cat(
-                        [bert_feat, cnn_feat],
+                        [bert_feat, cnn_feat, mlp_feat],
                         dim=1
                     )
+
+                    # for ablation study
+                    # fusion_feat = torch.cat(
+                    #     [cnn_feat, mlp_feat],
+                    #     dim=1
+                    # )
 
                     all_features.append(fusion_feat.cpu())
 
@@ -235,10 +240,10 @@ def extract_features(model_name):
         # -------------------------
         # Save to disk
         # -------------------------
-        torch.save(X_train_fusion, "data/X_train_fusion_noMLP.pt")
-        torch.save(X_test_fusion, "data/X_test_fusion_noMLP.pt")
-        torch.save(y_train, "data/y_train_fusion_noMLP.pt")
-        torch.save(y_test, "data/y_test_fusion_noMLP.pt")
+        torch.save(X_train_fusion, "features/fusion/X_train_fusion.pt")
+        torch.save(X_test_fusion, "features/fusion/X_test_fusion.pt")
+        torch.save(y_train, "features/fusion/y_train_fusion.pt")
+        torch.save(y_test, "features/fusion/y_test_fusion.pt")
 
         print("✅ Fusion features saved successfully.")
 

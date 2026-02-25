@@ -171,6 +171,10 @@ freeze | - | - | true | false | true | false
 * It seemed like the 2-layer fusion model performed slightly worse, and the basic 1-layer fusion model overfit the most when rerun, but this could be attributed to randomness.
 * Additional layers in fusion model did not help, likely because of a dataset size limitation, or that models already produce high level embeddings, or because features went through a bottleneck layer before fusion.
 
+### Ablation study
+This is to satisfy my curiosity on which models - BERT, ResNet18 or MLP - had the most positive or negative influence on the fused model outcome.
+<img src="charts/ablation_testF1_W&B Chart 25_02_2026, 19_17_01.png" width="48%" /><img src="charts/ablation_trainF1_W&B Chart 25_02_2026, 19_17_01.png" width="48%" />
+Interestingly, the fusion model performed the best when it fused all models, or only excluded ResNet18. This means that ResNet18 had almost no influence on predicting engagement labels, and BERT and MLP had similar contribution.
 
 ## Conclusions
 * At 59% to 63% for macro-F1, each model was better than the random-guess performance of 33% (for 3 classes), showing that each model performs boderline moderately, with BERT and captions being slightly more useful for predicting engagement labels

@@ -119,10 +119,11 @@ def _run(config, mode):
     except ValueError as e:
         raise ValueError(f"Incorrect config value type: {e}")
     
-    X_train = torch.load("features/fusion/X_train_fusion.pt")
-    X_test  = torch.load("features/fusion/X_test_fusion.pt")
-    y_train = torch.load("features/fusion/y_train_fusion.pt")
-    y_test  = torch.load("features/fusion/y_test_fusion.pt")
+    X_train = torch.load("features/fusion/X_train_fusion_noBERT.pt")
+    X_test  = torch.load("features/fusion/X_test_fusion_noBERT.pt")
+    y_train = torch.load("features/fusion/y_train_fusion_noBERT.pt")
+    y_test  = torch.load("features/fusion/y_test_fusion_noBERT.pt")
+    # modifiers for ablation study: _noCNN _noBERT _noMLP
 
     train_dataset = TensorDataset(X_train, y_train)
     test_dataset  = TensorDataset(X_test, y_test)
