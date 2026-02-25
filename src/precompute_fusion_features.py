@@ -30,8 +30,8 @@ def extract_features(model_name):
     train_df = pd.read_csv("data/train_df.csv", parse_dates=["publish_timestamp"])
     test_df  = pd.read_csv("data/test_df.csv", parse_dates=["publish_timestamp"])
 
-    # y_train = torch.tensor(train_df["engagement_label"].values, dtype=torch.long)
-    # y_test  = torch.tensor(test_df["engagement_label"].values, dtype=torch.long)
+    y_train = torch.tensor(train_df["engagement_label"].values, dtype=torch.long)
+    y_test  = torch.tensor(test_df["engagement_label"].values, dtype=torch.long)
 
     # -------------------------
     # Data preparation
@@ -204,8 +204,13 @@ def extract_features(model_name):
                     metadata = metadata.to(DEVICE)
                     mlp_feat = mlp_model(metadata, return_features=True)
 
+                    # fusion_feat = torch.cat(
+                    #     [bert_feat, cnn_feat, mlp_feat],
+                    #     dim=1
+                    # )
+
                     fusion_feat = torch.cat(
-                        [bert_feat, cnn_feat, mlp_feat],
+                        [bert_feat, cnn_feat],
                         dim=1
                     )
 
@@ -230,10 +235,10 @@ def extract_features(model_name):
         # -------------------------
         # Save to disk
         # -------------------------
-        torch.save(X_train_fusion, "data/X_train_fusion.pt")
-        torch.save(X_test_fusion, "data/X_test_fusion.pt")
-        torch.save(y_train, "data/y_train_fusion.pt")
-        torch.save(y_test, "data/y_test_fusion.pt")
+        torch.save(X_train_fusion, "data/X_train_fusion_noMLP.pt")
+        torch.save(X_test_fusion, "data/X_test_fusion_noMLP.pt")
+        torch.save(y_train, "data/y_train_fusion_noMLP.pt")
+        torch.save(y_test, "data/y_test_fusion_noMLP.pt")
 
         print("✅ Fusion features saved successfully.")
 

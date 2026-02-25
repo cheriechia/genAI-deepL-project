@@ -53,7 +53,8 @@ def load_best_mlp(run, input_dim=None):
         dropout=config["dropout"]
     ).to(DEVICE)
 
-    missing, unexpected = state_dict = torch.load("models/best_model_mlp.pt")
+    state_dict = torch.load("models/best_model_mlp.pt")
+    missing, unexpected = model.load_state_dict(state_dict)  # skip mismatched classifier keys
     print("Missing MLP keys:", missing)
     print("Unexpected MLP keys:", unexpected)
     model.load_state_dict(state_dict)
@@ -111,6 +112,8 @@ def _run(config, mode):
         learning_rate = float(config.learning_rate)
         epochs = int(config.epochs)
         batch_size = int(config.batch_size)
+        use_second_layer = config.use_second_layer
+        use_gating = config.use_gating
     except AttributeError as e:
         raise ValueError(f"Missing required config parameter: {e}")
     except ValueError as e:
@@ -136,8 +139,9 @@ def _run(config, mode):
     fusion_model = FusionModel(
         input_dim=input_dim,
         hidden_dim=hidden_dim,
-        use_second_layer=True,
-        use_gating=True
+        dropout=dropout,
+        use_second_layer=use_second_layer,
+        use_gating=use_gating
     ).to(DEVICE)
 
     
