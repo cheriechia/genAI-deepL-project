@@ -178,7 +178,9 @@ freeze | - | - | true | false | true | false
 
 ## Ablation study
 * This is to satisfy my curiosity on which models - BERT, ResNet18 or MLP - had the most positive or negative influence on the fused model outcome.
+
 <img src="charts/ablation_testF1_W&B Chart 25_02_2026, 19_17_01.png" width="48%" /><img src="charts/ablation_trainF1_W&B Chart 25_02_2026, 19_17_01.png" width="48%" />
+
 * Interestingly, the fusion model performed the best when it fused all models, or only excluded ResNet18. This means that ResNet18 had almost no influence on predicting engagement labels, and BERT and MLP had similar contribution.
 
 ## Conclusions
