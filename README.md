@@ -92,7 +92,7 @@ pip install -r requirements.txt
 **2. Run the code**
 The code has several modes and involves several models:
 mode: baseline, sweep or precompute
-model_name: fusion, all, bert, mlp, cnn, lstm
+model_name: fusion, bert, mlp, cnn, lstm
 
 Here are some options for running the code:
 ```shell
@@ -172,11 +172,11 @@ caption_word_count|Engineered|Number of words in caption, excluding hashtags|int
 hashtags|Extracted|List of hashtags|object|Unused
 num_hashtags|Engineered|Number of hashtags|int64|MLP
 
-Output: engagement_label - a low, moderate or high engagement label on the Instagram post. Split into 3 balanced classes based on count in each class.
+Output: engagement_label - a low, medium or high engagement label on the Instagram post. Split into 3 balanced classes based on count in each class.
 Label|Small dataset | Large dataset
 ---|---|---
 Low | less than 0.006% | less than 0.02%
-Moderate | 0.006% to 0.02% | 0.02% to 0.04%
+Medium | 0.006% to 0.02% | 0.02% to 0.04%
 High | Above 0.02% | Above 0.04%
 
 ## Explanation of choice of models

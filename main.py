@@ -50,7 +50,7 @@ def main():
     )
     parser.add_argument(
         "--model", type=str, default="",
-        choices=["fusion", "all", "bert", "mlp", "cnn", "lstm"],
+        choices=["fusion", "bert", "mlp", "cnn", "lstm"],
         help="Select which model to train/run"
     )
     parser.add_argument(
@@ -85,6 +85,7 @@ def main():
         for model_name, sweep_file, run_func in sweeps:
             if model_name == args.model: # if model name matches
                 launch_sweep(model_name, sweep_file, run_func, args.project)
+
         
     # Baseline run
     elif args.mode == "baseline":
