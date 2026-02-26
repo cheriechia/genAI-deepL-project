@@ -74,8 +74,7 @@ Engagement is defined as the level of audience interaction a post receives, meas
 |
 ├── charts/                                 [Experiment charts referenced in README.md]
 ├── docs/                                   [All reports and slides]
-├── huggingface1.png                        [Screenshot of UI for Huggingface space]
-├── huggingface2.png                        [Screenshot of UI for Huggingface space]
+├── HuggingFace Space/                      [Copy of HuggingFace Space deployment code]
 ├── README.md
 ├── requirements.txt                        [Packages required]
 └── main.py                                 [Main launcher of all runs]
